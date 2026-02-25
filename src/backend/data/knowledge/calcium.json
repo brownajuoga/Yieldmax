@@ -1,0 +1,16 @@
+{
+    "version": "2026-02-20T00:00:00Z",
+    "entries": [
+        {
+            "crop": "tomato",
+            "nutrient": "calcium",
+            "sources": [
+                "Eggshells",
+                "Crushed Limestone"
+            ],
+            "preparation": "Dry, crush finely, and compost for 6 weeks",
+            "application": "Apply 1 tonne/acre at transplant stage",
+            "notes": "Prevents blossom end rot"
+        }
+    ]
+}

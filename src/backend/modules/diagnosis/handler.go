@@ -8,10 +8,10 @@ import (
 )
 
 // RegisterRoutes initializes repository and service, then registers HTTP handlers.
-func RegisterRoutes(mux *http.ServeMux, ruleFilePath string) {
+func RegisterRoutes(mux *http.ServeMux, dirPath string) {
 	// Initialize repository
 	repo := &JSONRepository{
-		FilePath: ruleFilePath,
+		DirPath: dirPath,
 	}
 
 	// Initialize service

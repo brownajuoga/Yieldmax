@@ -14,16 +14,16 @@ import (
 func NewRouter() http.Handler {
 	mux := http.NewServeMux()
 
-	knowledge.RegisterRoutes(mux, "data/knowledge/rules.json")
-	diagnosis.RegisterRoutes(mux, "data/diagnosis/rules.json")
+	knowledge.RegisterRoutes(mux, "data/knowledge")
+	diagnosis.RegisterRoutes(mux, "data/diagnosis")
 	compost.RegisterRoutes(mux)
 	reports.RegisterRoutes(mux)
 	versioning.RegisterRoutes(mux)
 
 	// advisory
-	diagnosisRepo := &diagnosis.JSONRepository{FilePath: "data/diagnosis/rules.json"}
+	diagnosisRepo := &diagnosis.JSONRepository{DirPath: "data/diagnosis"}
 	diagnosisService, _ := diagnosis.NewDiagnosticService(diagnosisRepo)
-	knowledgeRepo := &knowledge.JSONRepository{FilePath: "data/knowledge/rules.json"}
+	knowledgeRepo := &knowledge.JSONRepository{DirPath: "data/knowledge"}
 	knowledgeService, _ := knowledge.NewService(knowledgeRepo)
 
 	aHandler := advisory.NewAdvisoryHandler(diagnosisService, knowledgeService)

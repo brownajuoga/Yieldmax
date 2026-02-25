@@ -27,3 +27,9 @@ curl -X POST http://localhost:9000/advisory \
            "symptom": "yellow_lower_leaves"
          }' | jq .
 ```
+
+## diagnosis syncing
+
+```bash
+curl -s "http://localhost:9000/diagnosis/sync?version=2024-01-01T00:00:00Z" | jq .
+```

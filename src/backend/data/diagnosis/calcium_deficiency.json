@@ -1,0 +1,16 @@
+{
+    "version": "2026-02-20T00:00:00Z",
+    "rules": [
+        {
+            "crop": "tomato",
+            "symptoms": [
+                "blossom_end_rot"
+            ],
+            "nutrient": "calcium",
+            "actions": [
+                "Apply crushed eggshell compost",
+                "Maintain even soil moisture"
+            ]
+        }
+    ]
+}

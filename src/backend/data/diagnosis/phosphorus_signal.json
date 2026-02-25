@@ -1,0 +1,17 @@
+{
+    "version": "2026-02-01T00:00:00Z",
+    "rules": [
+        {
+            "crop": "maize",
+            "symptoms": [
+                "purple_leaves",
+                "poor_root_growth"
+            ],
+            "nutrient": "phosphorus",
+            "actions": [
+                "Apply bone meal compost",
+                "Mix into planting rows"
+            ]
+        }
+    ]
+}

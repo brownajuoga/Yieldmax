@@ -1,24 +1,17 @@
 package knowledge
 
-type Nutrient struct {
-	Name   string `json:"name"`   // e.g., Nitrogen
-	Symbol string `json:"symbol"` // e.g., N
-}
-
-type Crop struct {
-	Name string `json:"name"` // e.g., Maize
-}
-
-type OrganicSource struct {
-	Name        string `json:"name"`        // e.g., Banana Peels
-	Description string `json:"description"` // optional details
-}
+import "time"
 
 type Guidance struct {
-	Crop           string   `json:"crop"`           // target crop
-	Nutrient       string   `json:"nutrient"`       // e.g., Nitrogen
-	Sources        []string `json:"sources"`        // recommended organic sources
-	Preparation    string   `json:"preparation"`    // e.g., 1:1 banana peels + dry leaves
-	Application    string   `json:"application"`    // e.g., apply 3t/acre 30 days before planting
-	Notes          string   `json:"notes,omitempty"`// optional advice
+	Crop           string   `json:"crop"`
+	Nutrient       string   `json:"nutrient"`
+	Sources        []string `json:"sources"`
+	Preparation    string   `json:"preparation"`
+	Application    string   `json:"application"`
+	Notes          string   `json:"notes,omitempty"`
+}
+
+type KnowledgeSet struct {
+	Version time.Time `json:"version"`
+	Entries []Guidance `json:"entries"`
 }

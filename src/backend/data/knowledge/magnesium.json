@@ -1,0 +1,16 @@
+{
+    "version": "2026-03-01T00:00:00Z",
+    "entries": [
+        {
+            "crop": "maize",
+            "nutrient": "magnesium",
+            "sources": [
+                "Epsom Salt",
+                "Dolomite"
+            ],
+            "preparation": "Dissolve salt in water or compost dolomite for 6 weeks",
+            "application": "Apply 1 tonne/acre during vegetative stage",
+            "notes": "Supports chlorophyll production"
+        }
+    ]
+}

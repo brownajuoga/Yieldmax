@@ -3,72 +3,99 @@ package diagnosis
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
 
-// DiagnosisRepository defines repository interface
 type DiagnosisRepository interface {
-	LoadRuleSet() (*RuleSet, error)
+	LoadAll() ([]Rule, time.Time, error)
 	GetVersion() (time.Time, error)
 	IsNewerThan(clientVersion time.Time) (bool, error)
 }
 
-// JSONRepository implements DiagnosisRepository
 type JSONRepository struct {
-	FilePath string
-	cache    *RuleSet
-	mu       sync.RWMutex
+	DirPath string
+
+	mu            sync.RWMutex
+	rules         []Rule
+	latestVersion time.Time
+	modTimes      map[string]time.Time
 }
 
-// LoadRuleSet reloads from JSON file
-func (r *JSONRepository) LoadRuleSet() (*RuleSet, error) {
-	data, err := os.ReadFile(r.FilePath)
+func (r *JSONRepository) LoadAll() ([]Rule, time.Time, error) {
+	files, err := filepath.Glob(filepath.Join(r.DirPath, "*.json"))
 	if err != nil {
-		return nil, err
+		return nil, time.Time{}, err
 	}
 
-	var ruleset RuleSet
-	if err := json.Unmarshal(data, &ruleset); err != nil {
-		return nil, err
-	}
-
-	// Parse version string as RFC3339 timestamp
-	t, err := time.Parse(time.RFC3339, ruleset.VersionStr)
-	if err != nil {
-		return nil, err
-	}
-	ruleset.Version = t
-
-	r.mu.Lock()
-	r.cache = &ruleset
-	r.mu.Unlock()
-
-	return &ruleset, nil
-}
-
-// GetVersion returns current RuleSet version
-func (r *JSONRepository) GetVersion() (time.Time, error) {
+	needReload := false
 	r.mu.RLock()
-	if r.cache != nil {
-		defer r.mu.RUnlock()
-		return r.cache.Version, nil
+	if r.modTimes == nil {
+		needReload = true
+	} else {
+		for _, file := range files {
+			info, err := os.Stat(file)
+			if err != nil || !info.ModTime().Equal(r.modTimes[file]) {
+				needReload = true
+				break
+			}
+		}
 	}
 	r.mu.RUnlock()
-	rs, err := r.LoadRuleSet()
-	if err != nil {
-		return time.Time{}, err
+
+	if !needReload {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+		return r.rules, r.latestVersion, nil
 	}
-	return rs.Version, nil
+
+	var allRules []Rule
+	var maxVersion time.Time
+	newModTimes := make(map[string]time.Time)
+
+	for _, file := range files {
+		info, _ := os.Stat(file)
+		newModTimes[file] = info.ModTime()
+
+		data, err := os.ReadFile(file)
+		if err != nil {
+			continue
+		}
+
+		var set RuleSet
+		if err := json.Unmarshal(data, &set); err != nil {
+			continue
+		}
+
+		allRules = append(allRules, set.Rules...)
+		if set.Version.After(maxVersion) {
+			maxVersion = set.Version
+		}
+	}
+
+	r.mu.Lock()
+	r.rules = allRules
+	r.latestVersion = maxVersion
+	r.modTimes = newModTimes
+	r.mu.Unlock()
+
+	return allRules, maxVersion, nil
 }
 
-// IsNewerThan compares server version to client version
+func (r *JSONRepository) GetVersion() (time.Time, error) {
+	_, version, err := r.LoadAll()
+	return version, err
+}
+
 func (r *JSONRepository) IsNewerThan(clientVersion time.Time) (bool, error) {
 	serverVersion, err := r.GetVersion()
 	if err != nil {
 		return false, err
 	}
 
-	// Truncate to second to ignore milliseconds/nanoseconds
-	return serverVersion.Truncate(time.Second).After(clientVersion.Truncate(time.Second)), nil
+	serverVersion = serverVersion.Truncate(time.Second)
+	clientVersion = clientVersion.Truncate(time.Second)
+
+	return serverVersion.After(clientVersion), nil
 }

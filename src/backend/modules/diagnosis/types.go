@@ -21,7 +21,6 @@ type Rule struct {
 }
 
 type RuleSet struct {
-	VersionStr string `json:"version"` // for JSON unmarshal
-	Version    time.Time                  // in-memory parsed time
-	Rules      []Rule                     `json:"rules"`
+	Version time.Time `json:"version"`
+	Rules   []Rule    `json:"rules"`
 }
