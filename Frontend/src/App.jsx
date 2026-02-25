@@ -29,7 +29,7 @@ export default function App() {
       {!user ? (
         <div className="landing">
           <nav className="nav">
-            <div className="logo"><span className="logo-icon">🌿</span> HealMax</div>
+            <div className="logo"><span className="logo-icon">🌿</span> YieldMax</div>
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <button className="btn-outline" onClick={() => setShowAuth(true)}>Login</button>
               <button className="btn-primary" onClick={() => setShowAuth(true)}>Create Account</button>
@@ -39,7 +39,7 @@ export default function App() {
           <div className="hero">
             <div className="badge">🇰🇪 Sustainable Farming Platform</div>
             <h1 className="hero-title">
-              Turn Manure Into <span>Nutrients</span>, Not Waste
+              Turn Wastes Into <span>Nutrients</span>
             </h1>
             <p className="hero-sub">
               A centralized platform connecting farmers for organic manure collection — reducing fertilizer dependency and promoting sustainable soil health.
