@@ -1,0 +1,17 @@
+{
+    "version": "2026-02-10T00:00:00Z",
+    "rules": [
+        {
+            "crop": "tomato",
+            "symptoms": [
+                "leaf_edge_browning",
+                "weak_stems"
+            ],
+            "nutrient": "potassium",
+            "actions": [
+                "Apply banana peel compost",
+                "Reduce excessive watering"
+            ]
+        }
+    ]
+}

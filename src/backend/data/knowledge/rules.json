@@ -1,0 +1,18 @@
+[
+  {
+    "crop": "maize",
+    "nutrient": "nitrogen",
+    "sources": ["Leafy Compost", "Kale Waste"],
+    "preparation": "Mix 1:1 with dry leaves, compost for 4-6 weeks",
+    "application": "Apply 3 tonnes/acre 30 days before planting",
+    "notes": "Ensure proper moisture to avoid nutrient loss"
+  },
+  {
+    "crop": "tomato",
+    "nutrient": "potassium",
+    "sources": ["Banana Peels"],
+    "preparation": "Chop peels and compost for 6 weeks",
+    "application": "Apply 2 tonnes/acre during early growth",
+    "notes": "Avoid overwatering to prevent leaching"
+  }
+]
