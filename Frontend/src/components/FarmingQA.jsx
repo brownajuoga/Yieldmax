@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getKnowledgeByCrop, getKnowledgeByNutrient, getAdvisory } from "../services/api";
 
 const FARMING_QA = [
   {
@@ -57,6 +58,15 @@ export default function FarmingQA() {
   const [open, setOpen] = useState(null);
   const [customQ, setCustomQ] = useState("");
   const [savedQs, setSavedQs] = useState(getSavedQuestions());
+  
+  // Backend integration states
+  const [cropQuery, setCropQuery] = useState("");
+  const [cropResults, setCropResults] = useState(null);
+  const [nutrientQuery, setNutrientQuery] = useState("");
+  const [nutrientResults, setNutrientResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [apiMode, setApiMode] = useState("local"); // "local" or "api"
 
   const filtered = FARMING_QA.filter(
     (item) =>
@@ -72,21 +82,121 @@ export default function FarmingQA() {
     setCustomQ("");
   };
 
+  const handleCropSearch = async (e) => {
+    e.preventDefault();
+    if (!cropQuery.trim()) return;
+    
+    setLoading(true);
+    setError("");
+    setApiMode("api");
+    
+    try {
+      const data = await getKnowledgeByCrop(cropQuery);
+      setCropResults(data);
+      setNutrientResults(null);
+    } catch (err) {
+      setError(err.message || "Failed to fetch crop guidance");
+      setCropResults(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNutrientSearch = async (e) => {
+    e.preventDefault();
+    if (!nutrientQuery.trim()) return;
+    
+    setLoading(true);
+    setError("");
+    setApiMode("api");
+    
+    try {
+      const data = await getKnowledgeByNutrient(nutrientQuery);
+      setNutrientResults(data);
+      setCropResults(null);
+    } catch (err) {
+      setError(err.message || "Failed to fetch nutrient guidance");
+      setNutrientResults(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearResults = () => {
+    setCropResults(null);
+    setNutrientResults(null);
+    setApiMode("local");
+    setError("");
+  };
+
   return (
     <div className="qa-page">
       <div className="offline-badge">
         <span className="offline-dot" />
-        Available Offline
+        {apiMode === "local" ? "Available Offline" : "Backend Connected"}
       </div>
       <div className="section-title">Farming Help Centre</div>
       <div className="section-sub">
-        Common farming issues answered. This page works without internet.
+        Common farming issues answered. Search by crop or nutrient for backend-powered guidance.
       </div>
+
+      {/* Backend API Search */}
+      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+        <form onSubmit={handleCropSearch} style={{ flex: 1, display: "flex", gap: "0.5rem" }}>
+          <input
+            className="cq-input"
+            placeholder="Search by crop (e.g., maize, tomatoes)"
+            value={cropQuery}
+            onChange={(e) => setCropQuery(e.target.value)}
+          />
+          <button className="cq-btn" type="submit" disabled={loading}>Search</button>
+        </form>
+        <form onSubmit={handleNutrientSearch} style={{ flex: 1, display: "flex", gap: "0.5rem" }}>
+          <input
+            className="cq-input"
+            placeholder="Search by nutrient (e.g., Nitrogen, Phosphorus)"
+            value={nutrientQuery}
+            onChange={(e) => setNutrientQuery(e.target.value)}
+          />
+          <button className="cq-btn" type="submit" disabled={loading}>Search</button>
+        </form>
+      </div>
+
+      {error && (
+        <div className="error-msg" style={{ marginBottom: "1rem" }}>
+          ⚠ {error} <button onClick={clearResults} style={{ marginLeft: "0.5rem", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear</button>
+        </div>
+      )}
+
+      {(cropResults || nutrientResults) && (
+        <div className="custom-question-box" style={{ marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <div className="cq-title">
+              {cropResults ? `🌱 Guidance for "${cropQuery}"` : `🧪 Guidance for "${nutrientQuery}"`}
+            </div>
+            <button className="cq-btn" onClick={clearResults} style={{ background: "var(--bark)" }}>Clear</button>
+          </div>
+          <div className="qa-list">
+            {(cropResults || nutrientResults || []).map((item, i) => (
+              <div key={i} className="qa-item open">
+                <div className="qa-answer" style={{ padding: "1rem" }}>
+                  <div className="qa-answer-text">
+                    <strong>{item.title || item.recommendation}</strong>
+                    {item.description && <p style={{ marginTop: "0.5rem" }}>{item.description}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Local FAQ Search */}
       <div className="search-bar">
         <span className="search-icon">🔍</span>
         <input
           className="search-input"
-          placeholder="Search by topic — soil, manure, pests, watering…"
+          placeholder="Search local FAQ — soil, manure, pests, watering…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

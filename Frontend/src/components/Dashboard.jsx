@@ -21,20 +21,25 @@ export default function Dashboard({ user, onNavigate }) {
         </div>
       </div>
       <div className="action-cards">
+        <div className="action-card" onClick={() => onNavigate("diagnosis")}>
+          <div className="action-card-icon">🔍</div>
+          <div className="action-card-title">Crop Diagnosis</div>
+          <div className="action-card-desc">AI-powered diagnosis of crop issues based on symptoms and soil conditions.</div>
+        </div>
         <div className="action-card" onClick={() => onNavigate("qa")}>
           <div className="action-card-icon">🧑‍🌾</div>
           <div className="action-card-title">Farming Help Centre</div>
           <div className="action-card-desc">Get answers to common farming issues — works offline too. Covers soil health, manure, pests & more.</div>
         </div>
-        <div className="action-card">
+        <div className="action-card" onClick={() => onNavigate("compost")}>
           <div className="action-card-icon">📦</div>
-          <div className="action-card-title">Submit Collection Request</div>
-          <div className="action-card-desc">Log available manure for pickup. Specify type, volume, and location.</div>
+          <div className="action-card-title">Compost Calculator</div>
+          <div className="action-card-desc">Get customized composting plans based on your organic waste inputs.</div>
         </div>
-        <div className="action-card">
+        <div className="action-card" onClick={() => onNavigate("reports")}>
           <div className="action-card-icon">📊</div>
-          <div className="action-card-title">Nutrient Calculator</div>
-          <div className="action-card-desc">Estimate the NPK value of your manure before it's collected and processed.</div>
+          <div className="action-card-title">Field Reports</div>
+          <div className="action-card-desc">Submit and track field reports for your farming activities.</div>
         </div>
       </div>
     </div>
