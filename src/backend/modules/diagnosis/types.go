@@ -1,5 +1,7 @@
 package diagnosis
 
+import "time"
+
 type DiagnosisRequest struct {
 	Crop     string `json:"crop"`
 	Symptom  string `json:"symptom"`
@@ -16,4 +18,10 @@ type Rule struct {
 	Symptoms []string `json:"symptoms"`
 	Nutrient string   `json:"nutrient"`
 	Actions  []string `json:"actions"`
+}
+
+type RuleSet struct {
+	VersionStr string `json:"version"` // for JSON unmarshal
+	Version    time.Time                  // in-memory parsed time
+	Rules      []Rule                     `json:"rules"`
 }
