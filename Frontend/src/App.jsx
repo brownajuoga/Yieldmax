@@ -7,6 +7,7 @@ import "./index.css";
 
 export default function App() {
   const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
   const [user, setUser] = useState(() => {
     const s = sessionStorage.getItem("activeUser");
     return s ? JSON.parse(s) : null;
@@ -43,15 +44,15 @@ export default function App() {
           <nav className="nav">
             <div className="logo"><span className="logo-icon">🌿</span> YieldMax</div>
             <div style={{ display: "flex", gap: "0.75rem" }}>
-              <button className="btn-outline" onClick={() => setShowAuth(true)}>Login</button>
-              <button className="btn-primary" onClick={() => setShowAuth(true)}>Create Account</button>
+              <button className="btn-outline" onClick={() => { setAuthMode("login"); setShowAuth(true); }}>Login</button>
+              <button className="btn-primary" onClick={() => { setAuthMode("register"); setShowAuth(true); }}>Create Account</button>
             </div>
           </nav>
 
           <div className="hero">
             <div className="badge">🇰🇪 Smart Farming Assistant</div>
             <h1 className="hero-title">
-              Better Crops with <span>Smart Manure</span> Advice
+              Turning Wastes <span style={{ display: "block" }}>Into</span> <span style={{ display: "block", color: "inherit" }}>Nutrients</span>
             </h1>
             <p className="hero-sub">
               Get personalized guidance on crop care, manure selection, and application timing for healthier soils and better yields.
@@ -60,7 +61,7 @@ export default function App() {
 
           <div className="footer-bar">© 2025 YieldMax · Agricultural Advisory Platform</div>
 
-          {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
+          {showAuth && <AuthModal initialTab={authMode} onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
         </div>
       ) : (
         <div className="app-shell">

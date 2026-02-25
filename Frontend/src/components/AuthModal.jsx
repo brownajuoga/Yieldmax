@@ -7,8 +7,8 @@ const saveUser = (u) => {
   localStorage.setItem("farmUsers", JSON.stringify(users));
 };
 
-export default function AuthModal({ onClose, onLogin }) {
-  const [tab, setTab] = useState("login");
+export default function AuthModal({ onClose, onLogin, initialTab = "login" }) {
+  const [tab, setTab] = useState(initialTab);
   const [form, setForm] = useState({
     name: "", email: "", password: "", farm: "", farmType: "", location: "",
   });
@@ -59,10 +59,6 @@ export default function AuthModal({ onClose, onLogin }) {
             ? "Log in to your farmer account"
             : "Register to manage manure collection & get farming help"}
         </div>
-        <div className="tab-row">
-          <button className={`tab ${tab === "login" ? "active" : ""}`} onClick={() => { setTab("login"); setError(""); setSuccess(false); }}>Login</button>
-          <button className={`tab ${tab === "register" ? "active" : ""}`} onClick={() => { setTab("register"); setError(""); setSuccess(false); }}>Create Account</button>
-        </div>
 
         {error && <div className="error-msg">⚠ {error}</div>}
 
@@ -83,6 +79,9 @@ export default function AuthModal({ onClose, onLogin }) {
               <input className="form-input" type="password" placeholder="••••••••" value={form.password} onChange={(e) => set("password", e.target.value)} />
             </div>
             <button className="btn-full" onClick={handleLogin}>Login →</button>
+            <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.9rem" }}>
+              Don't have an account? <button onClick={() => { setTab("register"); setError(""); }} style={{ background: "none", border: "none", color: "var(--moss)", textDecoration: "underline", cursor: "pointer" }}>Create Account</button>
+            </div>
           </>
         ) : (
           <>
@@ -119,6 +118,9 @@ export default function AuthModal({ onClose, onLogin }) {
               <input className="form-input" placeholder="e.g. Nakuru, Rift Valley" value={form.location} onChange={(e) => set("location", e.target.value)} />
             </div>
             <button className="btn-full" onClick={handleRegister}>Create Account →</button>
+            <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.9rem" }}>
+              Already have an account? <button onClick={() => { setTab("login"); setError(""); setSuccess(false); }} style={{ background: "none", border: "none", color: "var(--moss)", textDecoration: "underline", cursor: "pointer" }}>Login</button>
+            </div>
           </>
         )}
       </div>
