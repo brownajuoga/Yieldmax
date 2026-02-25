@@ -1,11 +1,9 @@
+import { cacheData, getCachedData, queueSync } from '../db/cache';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-/**
- * Generic fetch wrapper with error handling
- */
 async function fetchApi(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-
   const config = {
     ...options,
     headers: {
@@ -17,22 +15,38 @@ async function fetchApi(endpoint, options = {}) {
   try {
     const response = await fetch(url, config);
 
-    if (response.status === 204) {
-      return null; // No content
-    }
-
+    if (response.status === 204) return null;
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || `HTTP ${response.status}`);
     }
 
     const data = await response.json();
+    
+    // Cache successful responses
+    if (options.method === 'GET' || !options.method) {
+      await cacheData('crops', { name: endpoint, data, timestamp: Date.now() });
+    }
+    
     return data;
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
-    if (error.message.includes('Failed to fetch')) {
-      throw new Error('Cannot connect to backend server. Please ensure the backend is running on port 9000.');
+    
+    // Try cache fallback for GET requests
+    if (!options.method || options.method === 'GET') {
+      const cached = await getCachedData('crops', endpoint);
+      if (cached) {
+        console.warn('Serving from cache:', endpoint);
+        return cached.data;
+      }
     }
+    
+    // Queue mutations for later sync
+    if (options.method === 'POST' || options.method === 'PUT') {
+      await queueSync(endpoint, options.method, JSON.parse(options.body || '{}'));
+      return { _queued: true, message: 'Changes saved offline. Will sync when reconnected.' };
+    }
+    
     throw error;
   }
 }
