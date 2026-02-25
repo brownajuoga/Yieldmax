@@ -1,11 +1,11 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 /**
  * Generic fetch wrapper with error handling
  */
 async function fetchApi(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const config = {
     ...options,
     headers: {
@@ -16,20 +16,23 @@ async function fetchApi(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, config);
-    
+
     if (response.status === 204) {
       return null; // No content
     }
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || `HTTP ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error('Cannot connect to backend server. Please ensure the backend is running on port 9000.');
+    }
     throw error;
   }
 }
@@ -54,34 +57,11 @@ export async function getKnowledgeByNutrient(nutrientName) {
   return fetchApi(`/knowledge/nutrient?name=${encodeURIComponent(nutrientName)}`);
 }
 
-// ==================== DIAGNOSIS API ====================
-
-/**
- * Diagnose crop issues based on symptoms
- * @param {Object} symptoms - Symptom data { crop, symptoms: [], soil_conditions: {} }
- * @returns {Promise<Object>} Diagnosis result
- */
-export async function diagnose(symptoms) {
-  return fetchApi('/diagnosis', {
-    method: 'POST',
-    body: JSON.stringify(symptoms),
-  });
-}
-
-/**
- * Check for updates to diagnosis rules
- * @param {string} clientVersion - Current version in RFC3339 format
- * @returns {Promise<Object|null>} Updated ruleset or null if up to date
- */
-export async function checkDiagnosisUpdates(clientVersion) {
-  return fetchApi(`/diagnosis/sync?version=${encodeURIComponent(clientVersion)}`);
-}
-
-// ==================== ADVISORY API ====================
+// ==================== DIAGNOSIS/ADVISORY API ====================
 
 /**
  * Get combined diagnosis and guidance advisory
- * @param {Object} symptoms - Symptom data
+ * @param {Object} symptoms - Symptom data { crop, symptoms: [], soil_conditions: {} }
  * @returns {Promise<Object>} Advisory with diagnosis and guidance
  */
 export async function getAdvisory(symptoms) {
@@ -91,55 +71,26 @@ export async function getAdvisory(symptoms) {
   });
 }
 
-// ==================== COMPOST API ====================
+// ==================== REPORTS API (Farm Registration) ====================
 
 /**
- * Get composting plan based on inputs
- * @param {Object} request - Compost request { waste_type, quantity, additives: [] }
- * @returns {Promise<Object>} Composting plan
- */
-export async function getCompostPlan(request) {
-  return fetchApi('/compost', {
-    method: 'POST',
-    body: JSON.stringify(request),
-  });
-}
-
-// ==================== REPORTS API ====================
-
-/**
- * Submit a field report
- * @param {Object} report - Report data
+ * Submit a farm registration
+ * @param {Object} farmData - Farm data
  * @returns {Promise<void>}
  */
-export async function submitReport(report) {
+export async function submitReport(farmData) {
   return fetchApi('/reports', {
     method: 'POST',
-    body: JSON.stringify(report),
+    body: JSON.stringify(farmData),
   });
 }
 
 /**
- * Get all field reports
- * @returns {Promise<Array>} Array of reports
+ * Get all registered farms
+ * @returns {Promise<Array>} Array of farm registrations
  */
 export async function getReports() {
   return fetchApi('/reports', {
     method: 'GET',
   });
-}
-
-// ==================== HEALTH CHECK ====================
-
-/**
- * Check if backend API is available
- * @returns {Promise<boolean>}
- */
-export async function checkApiHealth() {
-  try {
-    await fetchApi('/reports');
-    return true;
-  } catch {
-    return false;
-  }
 }
