@@ -1,7 +1,8 @@
 import { useState } from "react";
 import AuthModal from "./components/AuthModal";
 import Dashboard from "./components/Dashboard";
-import FarmingQA from "./components/FarmingQA";
+import MyFarm from "./components/MyFarm";
+import CropAdvisory from "./components/CropAdvisory";
 import "./index.css";
 
 export default function App() {
@@ -24,6 +25,17 @@ export default function App() {
     setPage("dashboard");
   };
 
+  const renderPage = () => {
+    switch (page) {
+      case "farm":
+        return <MyFarm onBack={() => setPage("dashboard")} />;
+      case "advisory":
+        return <CropAdvisory onBack={() => setPage("dashboard")} />;
+      default:
+        return <Dashboard user={user} onNavigate={setPage} />;
+    }
+  };
+
   return (
     <>
       {!user ? (
@@ -37,47 +49,32 @@ export default function App() {
           </nav>
 
           <div className="hero">
-            <div className="badge">🇰🇪 Sustainable Farming Platform</div>
+            <div className="badge">🇰🇪 Smart Farming Assistant</div>
             <h1 className="hero-title">
-              Turn Wastes Into <span>Nutrients</span>
+              Better Crops with <span>Smart Manure</span> Advice
             </h1>
             <p className="hero-sub">
-              A centralized platform connecting farmers for organic manure collection — reducing fertilizer dependency and promoting sustainable soil health.
+              Get personalized guidance on crop care, manure selection, and application timing for healthier soils and better yields.
             </p>
-            <div className="hero-actions">
-              <button className="btn-primary" onClick={() => setShowAuth(true)}>Get Started Free →</button>
-              <button className="btn-outline" onClick={() => setShowAuth(true)}>Farmer Login</button>
-            </div>
-            <div className="features">
-              <div className="feature-pill">♻️ Organic Waste Reduction</div>
-              <div className="feature-pill">🧪 NPK Nutrient Tracking</div>
-              <div className="feature-pill">📶 Works Offline</div>
-              <div className="feature-pill">🚜 Pickup Scheduling</div>
-            </div>
           </div>
 
-          <div className="footer-bar">© 2025 NutriManure · Sustainable Farming Initiative</div>
+          <div className="footer-bar">© 2025 YieldMax · Agricultural Advisory Platform</div>
 
           {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
         </div>
       ) : (
         <div className="app-shell">
           <nav className="app-nav">
-            <div className="app-logo"><span>🌿</span> NutriManure</div>
+            <div className="app-logo"><span>🌿</span> YieldMax</div>
             <div className="app-nav-links">
-              <button className={`nav-btn ${page === "dashboard" ? "active" : ""}`} onClick={() => setPage("dashboard")}>Dashboard</button>
-              <button className={`nav-btn ${page === "qa" ? "active" : ""}`} onClick={() => setPage("qa")}>Help Centre</button>
+              <button className={`nav-btn ${page === "dashboard" ? "active" : ""}`} onClick={() => setPage("dashboard")}>Home</button>
               <button className="nav-btn logout" onClick={handleLogout}>Sign Out</button>
             </div>
           </nav>
           <div className="greeting-bar">
-            👋 Hello, <strong>{user.name}</strong> — {user.farm}{user.location ? ` · ${user.location}` : ""}
+             Hello, <strong>{user.name}</strong> — {user.farm}{user.location ? ` · ${user.location}` : ""}
           </div>
-          {page === "dashboard" ? (
-            <Dashboard user={user} onNavigate={setPage} />
-          ) : (
-            <FarmingQA />
-          )}
+          {renderPage()}
         </div>
       )}
     </>
