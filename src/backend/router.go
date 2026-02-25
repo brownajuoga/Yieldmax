@@ -16,7 +16,7 @@ func NewRouter() http.Handler {
 
 	knowledge.RegisterRoutes(mux, "data/knowledge")
 	diagnosis.RegisterRoutes(mux, "data/diagnosis")
-	compost.RegisterRoutes(mux)
+	compost.RegisterRoutes(mux, "data/compost")
 	reports.RegisterRoutes(mux)
 	versioning.RegisterRoutes(mux)
 

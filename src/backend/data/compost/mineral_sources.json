@@ -1,0 +1,29 @@
+{
+  "version": "2026-02-25T00:00:00Z",
+  "materials": [
+    {
+      "material": "eggshells",
+      "nutrient_content": {
+        "N": 0.0,
+        "P": 0.0,
+        "K": 0.0,
+        "Ca": 39.0
+      },
+      "preparation": "Dry, crush finely, and compost for 6 weeks",
+      "application": "Apply 1 tonne/acre at transplant stage",
+      "notes": "Prevents blossom end rot in tomatoes"
+    },
+    {
+      "material": "wood_ash",
+      "nutrient_content": {
+        "N": 0.0,
+        "P": 1.5,
+        "K": 7.0,
+        "Ca": 25.0
+      },
+      "preparation": "Use sparingly, mix with compost at 1:10 ratio",
+      "application": "Apply 0.5 tonnes/acre, avoid over-application",
+      "notes": "Raises soil pH, use cautiously"
+    }
+  ]
+}
