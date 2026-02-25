@@ -1,0 +1,1102 @@
+import { useState, useEffect } from "react";
+
+const FARMING_QA = [
+  {
+    q: "My crops are yellowing — what could be wrong?",
+    a: "Yellowing leaves (chlorosis) often indicate nitrogen deficiency. Organic manure is rich in nitrogen — apply well-composted manure around the root zone. Also check soil pH; values outside 6.0–7.0 lock out nutrients even when they're present.",
+  },
+  {
+    q: "How do I know if my soil needs more organic matter?",
+    a: "Signs include poor water retention, hard-crusted surface after rain, low earthworm activity, and weak plant growth. A simple squeeze test: moist healthy soil should clump loosely, not crack or crumble. Regular manure application improves all of these.",
+  },
+  {
+    q: "How often should I apply manure to my fields?",
+    a: "For most crops, apply composted manure once per growing season before planting. Avoid fresh manure near harvest time (90-day rule for food safety). Over-application can cause nutrient runoff, so more is not always better.",
+  },
+  {
+    q: "What's the difference between fresh and composted manure?",
+    a: "Fresh manure is high in nitrogen but can burn crops and harbor pathogens. Composted manure is safer, more stable, and releases nutrients slowly. Always prefer composted manure for direct field application.",
+  },
+  {
+    q: "My plants are wilting even though I'm watering regularly.",
+    a: "Overwatering causes root rot, which mimics drought stress. Check if soil is waterlogged. Organic matter from manure improves drainage and aeration. Also check for root pests like nematodes or fungal infections.",
+  },
+  {
+    q: "How do I reduce my dependence on chemical fertilizers?",
+    a: "Transition gradually by introducing composted manure, cover cropping (legumes fix nitrogen), and crop rotation. Pair with soil testing so you know exactly what's missing rather than applying chemicals broadly.",
+  },
+  {
+    q: "What crops benefit most from manure application?",
+    a: "Heavy feeders like maize, sorghum, cabbage, tomatoes, and leafy greens respond exceptionally well. Root crops like carrots prefer less — too much nitrogen causes forking. Legumes need very little since they fix their own.",
+  },
+  {
+    q: "Is manure from all animals equally beneficial?",
+    a: "No. Poultry manure is highest in nitrogen and phosphorus but can burn if not composted. Cattle manure is well-balanced and easier to handle. Goat and sheep manure is drier and easy to compost. Mix sources for a balanced nutrient profile.",
+  },
+  {
+    q: "How do I prevent pests without chemical pesticides?",
+    a: "Healthy soil = resilient plants. Regular manure keeps soil microbiomes active, which naturally suppresses some pests. Companion planting (marigolds repel nematodes), crop rotation, and physical barriers also help significantly.",
+  },
+  {
+    q: "Why is my soil compacting and how do I fix it?",
+    a: "Compaction comes from heavy machinery, tillage, or low organic matter. Adding composted manure regularly rebuilds soil structure. Earthworms thrive in organic-rich soil and naturally aerate it. Minimize tillage and avoid working wet soil.",
+  },
+];
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --soil: #3d2b1f;
+    --bark: #6b4226;
+    --moss: #4a6741;
+    --leaf: #7aab6e;
+    --straw: #d4a853;
+    --cream: #f5efe4;
+    --parchment: #ede3d0;
+    --mist: #e8f0e5;
+    --shadow: rgba(61,43,31,0.15);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--soil);
+    min-height: 100vh;
+  }
+
+  /* ── LANDING ── */
+  .landing {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    background: var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .landing::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 90%, rgba(74,103,65,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 10%, rgba(212,168,83,0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2.5rem;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--moss);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .logo-icon { font-size: 1.6rem; }
+
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 2rem;
+    position: relative;
+    z-index: 5;
+    gap: 1.5rem;
+  }
+
+  .badge {
+    background: var(--mist);
+    border: 1px solid var(--leaf);
+    color: var(--moss);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.3rem 1rem;
+    border-radius: 100px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--soil);
+    max-width: 700px;
+  }
+
+  .hero-title span { color: var(--moss); }
+
+  .hero-sub {
+    font-size: 1.05rem;
+    font-weight: 300;
+    color: var(--bark);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+
+  .btn-primary {
+    background: var(--moss);
+    color: white;
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px rgba(74,103,65,0.3);
+  }
+
+  .btn-primary:hover {
+    background: var(--soil);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(61,43,31,0.25);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--moss);
+    border: 1.5px solid var(--moss);
+    padding: 0.85rem 2rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-outline:hover {
+    background: var(--mist);
+    transform: translateY(-2px);
+  }
+
+  .features {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .feature-pill {
+    background: var(--parchment);
+    border: 1px solid rgba(107,66,38,0.2);
+    padding: 0.6rem 1.2rem;
+    border-radius: 100px;
+    font-size: 0.82rem;
+    color: var(--bark);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .footer-bar {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--bark);
+    opacity: 0.6;
+    position: relative;
+    z-index: 5;
+  }
+
+  /* ── AUTH MODAL / PAGE ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(61,43,31,0.5);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
+
+  .modal {
+    background: var(--cream);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    padding: 2.5rem;
+    box-shadow: 0 24px 60px rgba(61,43,31,0.25);
+    animation: slideUp 0.3s ease;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: var(--bark);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .modal-close:hover { opacity: 1; }
+
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--soil);
+    margin-bottom: 0.4rem;
+  }
+
+  .modal-sub {
+    font-size: 0.88rem;
+    color: var(--bark);
+    margin-bottom: 1.8rem;
+    font-weight: 300;
+  }
+
+  .tab-row {
+    display: flex;
+    background: var(--parchment);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 1.8rem;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 0.55rem;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    color: var(--bark);
+    transition: all 0.2s;
+    font-weight: 400;
+  }
+
+  .tab.active {
+    background: white;
+    color: var(--moss);
+    font-weight: 500;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .form-group { margin-bottom: 1.1rem; }
+
+  .form-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--bark);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid rgba(107,66,38,0.2);
+    border-radius: 8px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--soil);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus { border-color: var(--moss); }
+
+  .form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid rgba(107,66,38,0.2);
+    border-radius: 8px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--soil);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+  .form-select:focus { border-color: var(--moss); }
+
+  .btn-full {
+    width: 100%;
+    background: var(--moss);
+    color: white;
+    border: none;
+    padding: 0.9rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(74,103,65,0.3);
+  }
+  .btn-full:hover { background: var(--soil); }
+
+  .success-box {
+    background: var(--mist);
+    border: 1px solid var(--leaf);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+  .success-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .success-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--moss); }
+  .success-text { font-size: 0.85rem; color: var(--bark); margin-top: 0.3rem; }
+
+  .error-msg {
+    background: #fff0f0;
+    border: 1px solid #f5c0c0;
+    color: #b94040;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  /* ── APP SHELL (logged in) ── */
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--cream);
+  }
+
+  .app-nav {
+    background: var(--soil);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .app-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--straw);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .app-nav-links {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 400;
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+
+  .nav-btn.logout {
+    color: rgba(255,255,255,0.5);
+    margin-left: 1rem;
+  }
+
+  .greeting-bar {
+    background: var(--moss);
+    color: white;
+    padding: 0.8rem 2rem;
+    font-size: 0.88rem;
+    font-weight: 300;
+  }
+  .greeting-bar strong { font-weight: 500; }
+
+  /* ── DASHBOARD ── */
+  .dashboard {
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--soil);
+    margin-bottom: 0.3rem;
+  }
+
+  .section-sub {
+    color: var(--bark);
+    font-size: 0.9rem;
+    font-weight: 300;
+    margin-bottom: 2rem;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border: 1px solid rgba(107,66,38,0.1);
+    border-radius: 12px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .stat-icon { font-size: 1.8rem; }
+  .stat-label { font-size: 0.75rem; color: var(--bark); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--moss); }
+
+  .action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .action-card {
+    background: white;
+    border: 1px solid rgba(107,66,38,0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .action-card:hover {
+    border-color: var(--leaf);
+    box-shadow: 0 8px 24px var(--shadow);
+    transform: translateY(-2px);
+  }
+
+  .action-card-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+  .action-card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--soil); margin-bottom: 0.4rem; }
+  .action-card-desc { font-size: 0.83rem; color: var(--bark); font-weight: 300; line-height: 1.6; }
+
+  /* ── FARMING QA PAGE ── */
+  .qa-page {
+    padding: 2rem;
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .offline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--mist);
+    border: 1px solid var(--leaf);
+    color: var(--moss);
+    border-radius: 100px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .offline-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--leaf);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .search-bar {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--bark);
+    opacity: 0.6;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.8rem;
+    border: 1.5px solid rgba(107,66,38,0.2);
+    border-radius: 10px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--soil);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--moss); }
+
+  .qa-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .qa-item {
+    background: white;
+    border: 1.5px solid rgba(107,66,38,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .qa-item.open { border-color: var(--leaf); }
+
+  .qa-question {
+    padding: 1.1rem 1.3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    cursor: pointer;
+    gap: 1rem;
+  }
+
+  .qa-q-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--soil);
+    flex: 1;
+    line-height: 1.5;
+  }
+
+  .qa-chevron {
+    color: var(--moss);
+    font-size: 1rem;
+    transition: transform 0.25s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .qa-item.open .qa-chevron { transform: rotate(180deg); }
+
+  .qa-answer {
+    padding: 0 1.3rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.2s;
+  }
+
+  .qa-item.open .qa-answer {
+    max-height: 400px;
+    padding-bottom: 1.2rem;
+  }
+
+  .qa-answer-text {
+    font-size: 0.88rem;
+    color: var(--bark);
+    line-height: 1.75;
+    border-top: 1px solid var(--parchment);
+    padding-top: 1rem;
+    font-weight: 300;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--bark);
+    font-size: 0.9rem;
+    opacity: 0.7;
+  }
+
+  .custom-question-box {
+    background: var(--parchment);
+    border: 1px dashed rgba(107,66,38,0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .cq-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--soil);
+    margin-bottom: 0.4rem;
+  }
+
+  .cq-sub {
+    font-size: 0.82rem;
+    color: var(--bark);
+    margin-bottom: 1rem;
+    font-weight: 300;
+  }
+
+  .cq-row {
+    display: flex;
+    gap: 0.7rem;
+  }
+
+  .cq-input {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid rgba(107,66,38,0.2);
+    border-radius: 8px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--soil);
+    outline: none;
+  }
+  .cq-input:focus { border-color: var(--moss); }
+
+  .cq-btn {
+    background: var(--moss);
+    color: white;
+    border: none;
+    padding: 0.7rem 1.2rem;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .cq-btn:hover { background: var(--soil); }
+
+  .saved-questions {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .saved-q-item {
+    background: white;
+    border: 1px solid rgba(107,66,38,0.1);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.85rem;
+    color: var(--bark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .saved-q-text { flex: 1; }
+
+  .saved-q-tag {
+    background: var(--mist);
+    color: var(--moss);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+`;
+
+// ── UTILS ──
+const getUsers = () => JSON.parse(localStorage.getItem("farmUsers") || "[]");
+const saveUser = (u) => {
+  const users = getUsers();
+  users.push(u);
+  localStorage.setItem("farmUsers", JSON.stringify(users));
+};
+const getSavedQuestions = () =>
+  JSON.parse(localStorage.getItem("farmQuestions") || "[]");
+const saveQuestion = (q) => {
+  const qs = getSavedQuestions();
+  qs.unshift({ text: q, date: new Date().toLocaleDateString() });
+  localStorage.setItem("farmQuestions", JSON.stringify(qs.slice(0, 20)));
+};
+
+// ── COMPONENTS ──
+function AuthModal({ onClose, onLogin }) {
+  const [tab, setTab] = useState("login");
+  const [form, setForm] = useState({
+    name: "", email: "", password: "", farm: "", farmType: "", location: "",
+  });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleRegister = () => {
+    if (!form.name || !form.email || !form.password || !form.farm) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    const users = getUsers();
+    if (users.find((u) => u.email === form.email)) {
+      setError("An account with this email already exists.");
+      return;
+    }
+    saveUser(form);
+    setError("");
+    setSuccess(true);
+    setTimeout(() => { onLogin(form); }, 1800);
+  };
+
+  const handleLogin = () => {
+    if (!form.email || !form.password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+    const users = getUsers();
+    const user = users.find(
+      (u) => u.email === form.email && u.password === form.password
+    );
+    if (!user) {
+      setError("Incorrect email or password.");
+      return;
+    }
+    onLogin(user);
+  };
+
+  return (
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <div className="modal-title">{tab === "login" ? "Welcome Back" : "Join the Platform"}</div>
+        <div className="modal-sub">
+          {tab === "login"
+            ? "Log in to your farmer account"
+            : "Register to manage manure collection & get farming help"}
+        </div>
+        <div className="tab-row">
+          <button className={`tab ${tab === "login" ? "active" : ""}`} onClick={() => { setTab("login"); setError(""); setSuccess(false); }}>Login</button>
+          <button className={`tab ${tab === "register" ? "active" : ""}`} onClick={() => { setTab("register"); setError(""); setSuccess(false); }}>Create Account</button>
+        </div>
+
+        {error && <div className="error-msg">⚠ {error}</div>}
+
+        {success ? (
+          <div className="success-box">
+            <div className="success-icon">🌱</div>
+            <div className="success-title">Account Created!</div>
+            <div className="success-text">Welcome to the platform. Signing you in…</div>
+          </div>
+        ) : tab === "login" ? (
+          <>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input className="form-input" type="email" placeholder="farmer@email.com" value={form.email} onChange={(e) => set("email", e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Password</label>
+              <input className="form-input" type="password" placeholder="••••••••" value={form.password} onChange={(e) => set("password", e.target.value)} />
+            </div>
+            <button className="btn-full" onClick={handleLogin}>Login →</button>
+          </>
+        ) : (
+          <>
+            <div className="form-group">
+              <label className="form-label">Full Name *</label>
+              <input className="form-input" placeholder="John Kamau" value={form.name} onChange={(e) => set("name", e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email *</label>
+              <input className="form-input" type="email" placeholder="farmer@email.com" value={form.email} onChange={(e) => set("email", e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Password *</label>
+              <input className="form-input" type="password" placeholder="Create a password" value={form.password} onChange={(e) => set("password", e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Farm Name *</label>
+              <input className="form-input" placeholder="Green Valley Farm" value={form.farm} onChange={(e) => set("farm", e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Farm Type</label>
+              <select className="form-select" value={form.farmType} onChange={(e) => set("farmType", e.target.value)}>
+                <option value="">Select type...</option>
+                <option>Dairy / Cattle</option>
+                <option>Poultry</option>
+                <option>Mixed Livestock</option>
+                <option>Crop Farming</option>
+                <option>Horticulture</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Location / County</label>
+              <input className="form-input" placeholder="e.g. Nakuru, Rift Valley" value={form.location} onChange={(e) => set("location", e.target.value)} />
+            </div>
+            <button className="btn-full" onClick={handleRegister}>Create Account →</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ user, onNavigate }) {
+  return (
+    <div className="dashboard">
+      <div className="section-title">Your Dashboard</div>
+      <div className="section-sub">Manage your farm's organic waste and get support.</div>
+      <div className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-icon">🚛</div>
+          <div className="stat-label">Pending Pickups</div>
+          <div className="stat-value">0</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div className="stat-label">Completed</div>
+          <div className="stat-value">0</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">🌿</div>
+          <div className="stat-label">Nutrients Saved (kg)</div>
+          <div className="stat-value">0</div>
+        </div>
+      </div>
+      <div className="action-cards">
+        <div className="action-card" onClick={() => onNavigate("qa")}>
+          <div className="action-card-icon">🌾</div>
+          <div className="action-card-title">Farming Help Centre</div>
+          <div className="action-card-desc">Get answers to common farming issues — works offline too. Covers soil health, manure, pests & more.</div>
+        </div>
+        <div className="action-card">
+          <div className="action-card-icon">📦</div>
+          <div className="action-card-title">Submit Collection Request</div>
+          <div className="action-card-desc">Log available manure for pickup. Specify type, volume, and location.</div>
+        </div>
+        <div className="action-card">
+          <div className="action-card-icon">📊</div>
+          <div className="action-card-title">Nutrient Calculator</div>
+          <div className="action-card-desc">Estimate the NPK value of your manure before it's collected and processed.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FarmingQA() {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(null);
+  const [customQ, setCustomQ] = useState("");
+  const [savedQs, setSavedQs] = useState(getSavedQuestions());
+
+  const filtered = FARMING_QA.filter(
+    (item) =>
+      search === "" ||
+      item.q.toLowerCase().includes(search.toLowerCase()) ||
+      item.a.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleSave = () => {
+    if (!customQ.trim()) return;
+    saveQuestion(customQ.trim());
+    setSavedQs(getSavedQuestions());
+    setCustomQ("");
+  };
+
+  return (
+    <div className="qa-page">
+      <div className="offline-badge">
+        <span className="offline-dot" />
+        Available Offline
+      </div>
+      <div className="section-title">Farming Help Centre</div>
+      <div className="section-sub">
+        Common farming issues answered. This page works without internet.
+      </div>
+      <div className="search-bar">
+        <span className="search-icon">🔍</span>
+        <input
+          className="search-input"
+          placeholder="Search by topic — soil, manure, pests, watering…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+      <div className="qa-list">
+        {filtered.length === 0 && (
+          <div className="no-results">No results for "{search}". Try a different keyword.</div>
+        )}
+        {filtered.map((item, i) => (
+          <div
+            key={i}
+            className={`qa-item ${open === i ? "open" : ""}`}
+          >
+            <div className="qa-question" onClick={() => setOpen(open === i ? null : i)}>
+              <div className="qa-q-text">{item.q}</div>
+              <div className="qa-chevron">▾</div>
+            </div>
+            <div className="qa-answer">
+              <div className="qa-answer-text">{item.a}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="custom-question-box">
+        <div className="cq-title">Save a Question for Later</div>
+        <div className="cq-sub">
+          Type any farming question to save it locally — you'll see it here when you come back, even offline.
+        </div>
+        <div className="cq-row">
+          <input
+            className="cq-input"
+            placeholder="e.g. Why are my tomato leaves curling?"
+            value={customQ}
+            onChange={(e) => setCustomQ(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          />
+          <button className="cq-btn" onClick={handleSave}>Save</button>
+        </div>
+        {savedQs.length > 0 && (
+          <div className="saved-questions">
+            {savedQs.slice(0, 5).map((q, i) => (
+              <div className="saved-q-item" key={i}>
+                <div className="saved-q-text">{q.text}</div>
+                <div className="saved-q-tag">Saved {q.date}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──
+export default function App() {
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState(() => {
+    const s = sessionStorage.getItem("activeUser");
+    return s ? JSON.parse(s) : null;
+  });
+  const [page, setPage] = useState("dashboard");
+
+  const handleLogin = (u) => {
+    sessionStorage.setItem("activeUser", JSON.stringify(u));
+    setUser(u);
+    setShowAuth(false);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("activeUser");
+    setUser(null);
+    setPage("dashboard");
+  };
+
+  return (
+    <>
+      <style>{styles}</style>
+
+      {!user ? (
+        <div className="landing">
+          <nav className="nav">
+            <div className="logo"><span className="logo-icon">🌿</span> NutriManure</div>
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button className="btn-outline" onClick={() => setShowAuth(true)}>Login</button>
+              <button className="btn-primary" onClick={() => setShowAuth(true)}>Create Account</button>
+            </div>
+          </nav>
+
+          <div className="hero">
+            <div className="badge">🇰🇪 Sustainable Farming Platform</div>
+            <h1 className="hero-title">
+              Turn Manure Into <span>Nutrients</span>, Not Waste
+            </h1>
+            <p className="hero-sub">
+              A centralized platform connecting farmers for organic manure collection — reducing fertilizer dependency and promoting sustainable soil health.
+            </p>
+            <div className="hero-actions">
+              <button className="btn-primary" onClick={() => setShowAuth(true)}>Get Started Free →</button>
+              <button className="btn-outline" onClick={() => setShowAuth(true)}>Farmer Login</button>
+            </div>
+            <div className="features">
+              <div className="feature-pill">♻️ Organic Waste Reduction</div>
+              <div className="feature-pill">🧪 NPK Nutrient Tracking</div>
+              <div className="feature-pill">📶 Works Offline</div>
+              <div className="feature-pill">🚜 Pickup Scheduling</div>
+            </div>
+          </div>
+
+          <div className="footer-bar">© 2025 NutriManure · Sustainable Farming Initiative</div>
+
+          {showAuth && <AuthModal onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
+        </div>
+      ) : (
+        <div className="app-shell">
+          <nav className="app-nav">
+            <div className="app-logo"><span>🌿</span> NutriManure</div>
+            <div className="app-nav-links">
+              <button className={`nav-btn ${page === "dashboard" ? "active" : ""}`} onClick={() => setPage("dashboard")}>Dashboard</button>
+              <button className={`nav-btn ${page === "qa" ? "active" : ""}`} onClick={() => setPage("qa")}>Help Centre</button>
+              <button className="nav-btn logout" onClick={handleLogout}>Sign Out</button>
+            </div>
+          </nav>
+          <div className="greeting-bar">
+            👋 Hello, <strong>{user.name}</strong> — {user.farm}{user.location ? ` · ${user.location}` : ""}
+          </div>
+          {page === "dashboard" ? (
+            <Dashboard user={user} onNavigate={setPage} />
+          ) : (
+            <FarmingQA />
+          )}
+        </div>
+      )}
+    </>
+  );
+}
