@@ -6,33 +6,18 @@ const CROP_OPTIONS = [
   "Lettuce",
   "Pepper",
   "Maize",
-  "Cabbage",
-  "Beans",
-  "Kale",
-  "Carrots",
-  "Onions",
-  "Potatoes",
-  "Spinach",
-  "Other",
 ];
 
 const SYMPTOM_OPTIONS = [
   { label: "Yellowing lower leaves", value: "yellow_lower_leaves" },
   { label: "Yellow leaf edges", value: "yellow_leaf_edges" },
-  { label: "Interveinal yellowing", value: "interveinal_yellowing" },
+  { label: "Stunted growth", value: "stunted_growth" },
   { label: "Purple leaves", value: "purple_leaves" },
   { label: "Poor root growth", value: "poor_root_growth" },
   { label: "Blossom end rot", value: "blossom_end_rot" },
   { label: "Leaf edge browning", value: "leaf_edge_browning" },
   { label: "Weak stems", value: "weak_stems" },
-  { label: "Stunted growth", value: "stunted_growth" },
-  { label: "Leaf spots", value: "leaf_spots" },
-  { label: "Poor flowering", value: "poor_flowering" },
-  { label: "Leaf curling", value: "leaf_curling" },
-  { label: "Pale green color", value: "pale_green_color" },
-  { label: "Poor fruit set", value: "poor_fruit_set" },
-  { label: "Wilting", value: "wilting" },
-  { label: "Slow growth", value: "slow_growth" },
+  { label: "Interveinal yellowing", value: "interveinal_yellowing" },
 ];
 
 const MANURE_TYPES = [
@@ -100,6 +85,7 @@ export default function CropAdvisory({ onBack }) {
         crop: formData.crop,
         knowledge: knowledgeData,
         diagnosis: diagnosisData,
+        guidance: diagnosisData?.guidance || [],
       });
       setStep(3);
     } catch (err) {
@@ -313,6 +299,27 @@ export default function CropAdvisory({ onBack }) {
                       {item.crop ? `Crop: ${item.crop}` : item.recommendation}
                     </p>
                     {item.nutrient && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Nutrient: {item.nutrient}</p>}
+                    {item.sources && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Sources: {item.sources.join(", ")}</p>}
+                    {item.preparation && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Preparation: {item.preparation}</p>}
+                    {item.application && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Application: {item.application}</p>}
+                    {item.notes && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Notes: {item.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Guidance from Advisory */}
+            {advisory.guidance && advisory.guidance.length > 0 && (
+              <div style={{ marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>💡</span>
+                  <strong style={{ color: "var(--soil)" }}>Nutrient Guidance</strong>
+                </div>
+                {advisory.guidance.map((item, i) => (
+                  <div key={i} style={{ background: "white", padding: "1rem", borderRadius: "8px", marginBottom: "0.5rem" }}>
+                    <p style={{ fontWeight: "500", marginBottom: "0.3rem" }}>
+                      {item.nutrient && `Nutrient: ${item.nutrient}`}
+                    </p>
                     {item.sources && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Sources: {item.sources.join(", ")}</p>}
                     {item.preparation && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Preparation: {item.preparation}</p>}
                     {item.application && <p style={{ fontSize: "0.85rem", color: "var(--bark)" }}>Application: {item.application}</p>}
