@@ -2,24 +2,29 @@ import { useState } from "react";
 import { getAdvisory, getKnowledgeByCrop } from "../services/api";
 
 const CROP_OPTIONS = [
+  "Tomato",
+  "Lettuce",
+  "Pepper",
   "Maize",
-  "Tomatoes",
   "Cabbage",
   "Beans",
-  "Wheat",
-  "Sorghum",
   "Kale",
   "Carrots",
   "Onions",
   "Potatoes",
   "Spinach",
-  "Peppers",
   "Other",
 ];
 
 const SYMPTOM_OPTIONS = [
   { label: "Yellowing lower leaves", value: "yellow_lower_leaves" },
   { label: "Yellow leaf edges", value: "yellow_leaf_edges" },
+  { label: "Interveinal yellowing", value: "interveinal_yellowing" },
+  { label: "Purple leaves", value: "purple_leaves" },
+  { label: "Poor root growth", value: "poor_root_growth" },
+  { label: "Blossom end rot", value: "blossom_end_rot" },
+  { label: "Leaf edge browning", value: "leaf_edge_browning" },
+  { label: "Weak stems", value: "weak_stems" },
   { label: "Stunted growth", value: "stunted_growth" },
   { label: "Leaf spots", value: "leaf_spots" },
   { label: "Poor flowering", value: "poor_flowering" },
@@ -352,7 +357,15 @@ export default function CropAdvisory({ onBack }) {
                 <p style={{ fontSize: "0.9rem", color: "var(--bark)", marginBottom: "0.5rem" }}>Best Option</p>
                 <p style={{ fontWeight: "600", fontSize: "1.1rem", color: "var(--soil)" }}>
                   {advisory.diagnosis?.diagnosis?.nutrient?.toLowerCase()?.includes("nitrogen")
-                    ? "🐔 Poultry Manure (High Nitrogen)"
+                    ? "🐔 Poultry Manure or Leafy Compost (High Nitrogen)"
+                    : advisory.diagnosis?.diagnosis?.nutrient?.toLowerCase()?.includes("potassium")
+                    ? "🍌 Banana Peel Compost or Wood Ash (High Potassium)"
+                    : advisory.diagnosis?.diagnosis?.nutrient?.toLowerCase()?.includes("calcium")
+                    ? "🥚 Crushed Eggshells or Limestone (Calcium)"
+                    : advisory.diagnosis?.diagnosis?.nutrient?.toLowerCase()?.includes("phosphorus")
+                    ? "🦴 Bone Meal or Fish Waste (Phosphorus)"
+                    : advisory.diagnosis?.diagnosis?.nutrient?.toLowerCase()?.includes("magnesium")
+                    ? "🌿 Dolomite or Epsom Salt (Magnesium)"
                     : "🐄 Well-composted Cattle Manure"}
                 </p>
               </div>
@@ -377,15 +390,16 @@ export default function CropAdvisory({ onBack }) {
                 </p>
               </div>
 
-              <div style={{ background: "white", padding: "1rem", borderRadius: "8px" }}>
-                <p style={{ fontSize: "0.9rem", color: "var(--bark)", marginBottom: "0.5rem" }}>Application Method</p>
-                <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.9rem" }}>
-                  <li>Spread evenly over the field before ploughing</li>
-                  <li>Mix well with soil to prevent root burn</li>
-                  <li>Water lightly after application if soil is dry</li>
-                  <li>Avoid direct contact with seeds or young roots</li>
-                </ul>
-              </div>
+              {advisory.diagnosis?.diagnosis?.actions && (
+                <div style={{ background: "white", padding: "1rem", borderRadius: "8px" }}>
+                  <p style={{ fontSize: "0.9rem", color: "var(--bark)", marginBottom: "0.5rem" }}>Recommended Actions</p>
+                  <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.9rem" }}>
+                    {advisory.diagnosis.diagnosis.actions.map((action, i) => (
+                      <li key={i}>{action}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </>
