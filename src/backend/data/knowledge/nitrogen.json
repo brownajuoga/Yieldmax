@@ -1,0 +1,16 @@
+{
+    "version": "2026-02-10T00:00:00Z",
+    "entries": [
+        {
+            "crop": "lettuce",
+            "nutrient": "nitrogen",
+            "sources": [
+                "Grass Clippings",
+                "Legume Residue"
+            ],
+            "preparation": "Layer with dry material and compost for 4 weeks",
+            "application": "Apply 2 tonnes/acre two weeks before planting",
+            "notes": "Promotes leafy growth"
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "version": "2026-02-01T00:00:00Z",
+    "entries": [
+        {
+            "crop": "tomato",
+            "nutrient": "potassium",
+            "sources": [
+                "Banana Peels",
+                "Wood Ash"
+            ],
+            "preparation": "Dry and crush before composting for 4-6 weeks",
+            "application": "Apply 2 tonnes/acre during flowering",
+            "notes": "Enhances fruit size and disease resistance"
+        },
+        {
+            "crop": "pepper",
+            "nutrient": "potassium",
+            "sources": [
+                "Wood Ash"
+            ],
+            "preparation": "Sift ash and mix into compost",
+            "application": "Apply 1.5 tonnes/acre before flowering",
+            "notes": "Avoid excessive use to prevent soil alkalinity"
+        }
+    ]
+}

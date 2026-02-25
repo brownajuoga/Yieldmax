@@ -1,0 +1,16 @@
+{
+    "version": "2026-01-15T00:00:00Z",
+    "entries": [
+        {
+            "crop": "maize",
+            "nutrient": "phosphorus",
+            "sources": [
+                "Bone Meal",
+                "Fish Waste"
+            ],
+            "preparation": "Grind finely and compost for 6-8 weeks",
+            "application": "Apply 2 tonnes/acre at planting time",
+            "notes": "Improves root development and early vigor"
+        }
+    ]
+}

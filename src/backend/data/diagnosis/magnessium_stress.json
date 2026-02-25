@@ -1,0 +1,16 @@
+{
+    "version": "2026-03-01T00:00:00Z",
+    "rules": [
+        {
+            "crop": "maize",
+            "symptoms": [
+                "interveinal_yellowing"
+            ],
+            "nutrient": "magnesium",
+            "actions": [
+                "Apply dolomite compost",
+                "Avoid potassium overuse"
+            ]
+        }
+    ]
+}

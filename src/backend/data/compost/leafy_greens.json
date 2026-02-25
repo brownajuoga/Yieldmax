@@ -1,0 +1,27 @@
+{
+  "version": "2026-02-25T00:00:00Z",
+  "materials": [
+    {
+      "material": "kale",
+      "nutrient_content": {
+        "N": 3.0,
+        "P": 1.0,
+        "K": 0.5
+      },
+      "preparation": "Layer with dry material and compost for 4 weeks",
+      "application": "Apply 2 tonnes/acre two weeks before planting",
+      "notes": "High nitrogen content promotes leafy growth"
+    },
+    {
+      "material": "lettuce",
+      "nutrient_content": {
+        "N": 2.5,
+        "P": 0.8,
+        "K": 0.4
+      },
+      "preparation": "Mix with brown material 1:2 ratio, compost for 3-4 weeks",
+      "application": "Apply 1.5 tonnes/acre at planting",
+      "notes": "Quick decomposition, good for nitrogen boost"
+    }
+  ]
+}

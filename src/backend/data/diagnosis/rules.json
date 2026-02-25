@@ -1,0 +1,27 @@
+{
+  "version": "2024-01-01T00:05:00Z",
+  "rules": [
+    {
+      "crop": "maize",
+      "symptoms": [
+        "yellow_lower_leaves"
+      ],
+      "nutrient": "nitrogen",
+      "actions": [
+        "Apply leafy compost",
+        "Incorporate before rain"
+      ]
+    },
+    {
+      "crop": "tomato",
+      "symptoms": [
+        "yellow_leaf_edges"
+      ],
+      "nutrient": "potassium",
+      "actions": [
+        "Add banana peel compost",
+        "Use controlled wood ash"
+      ]
+    }
+  ]
+}
