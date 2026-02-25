@@ -29,7 +29,7 @@ export default function App() {
       {!user ? (
         <div className="landing">
           <nav className="nav">
-            <div className="logo"><span className="logo-icon">🌿</span> NutriManure</div>
+            <div className="logo"><span className="logo-icon">🌿</span> HealMax</div>
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <button className="btn-outline" onClick={() => setShowAuth(true)}>Login</button>
               <button className="btn-primary" onClick={() => setShowAuth(true)}>Create Account</button>
