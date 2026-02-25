@@ -1,13 +1,20 @@
-# NutriManure Frontend
+# YieldMax - Smart Farming Assistant
 
-A React-based sustainable farming platform that connects farmers for organic manure collection and provides AI-powered crop diagnosis.
+An agricultural advisory platform that helps farmers get personalized crop care advice and manure recommendations.
 
 ## Features
 
-- **Crop Diagnosis** - AI-powered diagnosis of crop issues based on symptoms and soil conditions
-- **Farming Help Centre** - Q&A database with offline support and backend-powered search
-- **Compost Calculator** - Get customized composting plans for your organic waste
-- **Field Reports** - Submit and track farming activity reports
+- **Crop Advisory** - Get personalized manure recommendations based on crop type, growth stage, and symptoms
+- **My Farm** - Register and track your farm details and crops
+- **Ask About Crops** - Search for crop-specific advice from the knowledge base or browse common farming questions
+
+## Core Functionality
+
+The app helps farmers answer:
+1. **What type of manure should I use?** - Recommends poultry, cattle, or goat manure based on crop needs
+2. **When should I apply manure?** - Provides timing guidance based on growth stage
+3. **How much manure should I apply?** - Calculates application rates per acre/hectare
+4. **What's wrong with my crops?** - Diagnoses nutrient deficiencies from symptoms
 
 ## Prerequisites
 
@@ -51,15 +58,14 @@ The frontend will start on `http://localhost:5173`
 Frontend/
 ├── src/
 │   ├── components/
-│   │   ├── AuthModal.jsx       # Login/registration modal
-│   │   ├── Dashboard.jsx       # Main dashboard with action cards
-│   │   ├── Diagnosis.jsx       # Crop diagnosis tool
-│   │   ├── CompostCalculator.jsx # Composting plan calculator
-│   │   ├── FarmingQA.jsx       # FAQ and knowledge base
-│   │   └── Reports.jsx         # Field reports management
+│   │   ├── AuthModal.jsx       # Login/registration
+│   │   ├── Dashboard.jsx       # Main dashboard
+│   │   ├── MyFarm.jsx          # Farm registration
+│   │   ├── CropAdvisory.jsx    # Manure recommendations
+│   │   └── FarmingQA.jsx       # Q&A and knowledge search
 │   ├── services/
 │   │   └── api.js              # Backend API client
-│   ├── App.jsx                 # Main application component
+│   ├── App.jsx                 # Main application
 │   ├── main.jsx                # Entry point
 │   └── index.css               # Global styles
 ├── index.html
@@ -70,20 +76,14 @@ Frontend/
 
 ## Backend Integration
 
-The frontend connects to the Go backend via these API endpoints:
-
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/diagnosis` | POST | Diagnose crop issues |
-| `/knowledge/crop` | GET | Get crop-specific guidance |
-| `/knowledge/nutrient` | GET | Get nutrient-specific guidance |
-| `/advisory` | POST | Get combined diagnosis + guidance |
-| `/compost` | POST | Get composting plan |
-| `/reports` | GET/POST | Manage field reports |
+| `/knowledge/crop?name=` | GET | Get crop-specific guidance |
+| `/knowledge/nutrient?name=` | GET | Get nutrient-specific guidance |
+| `/advisory` | POST | Get diagnosis + recommendations |
+| `/reports` | GET/POST | Farm registration storage |
 
 ## Environment Variables
-
-Create a `.env` file in the root directory:
 
 ```env
 VITE_API_URL=http://localhost:9000
