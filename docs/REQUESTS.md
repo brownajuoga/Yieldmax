@@ -20,6 +20,180 @@ All responses are JSON.
 
 ---
 
+# 0. Authentication Service
+
+Purpose:
+User registration and login with JWT tokens. Returns offline data package for local storage.
+
+---
+
+## 0.1 Register New User
+
+```
+POST /auth/register
+```
+
+Request body:
+
+```json
+{
+  "email": "farmer@example.com",
+  "password": "password123",
+  "name": "John Kamau",
+  "farm": {
+    "name": "Green Valley Farm",
+    "type": "Mixed Livestock",
+    "location": "Nakuru, Rift Valley"
+  }
+}
+```
+
+Example:
+
+```bash
+curl -X POST http://localhost:9000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "farmer@example.com",
+    "password": "password123",
+    "name": "John Kamau",
+    "farm": {
+      "name": "Green Valley Farm",
+      "type": "Mixed Livestock",
+      "location": "Nakuru, Rift Valley"
+    }
+  }' | jq .
+```
+
+Response (201 Created):
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user_123",
+    "email": "farmer@example.com",
+    "name": "John Kamau",
+    "created_at": "2026-02-25T10:00:00Z"
+  },
+  "farm": {
+    "id": "farm_456",
+    "name": "Green Valley Farm",
+    "type": "Mixed Livestock",
+    "location": "Nakuru, Rift Valley",
+    "owner_id": "user_123",
+    "created_at": "2026-02-25T10:00:00Z"
+  },
+  "reports": []
+}
+```
+
+---
+
+## 0.2 Login
+
+```
+POST /auth/login
+```
+
+Request body:
+
+```json
+{
+  "email": "farmer@example.com",
+  "password": "password123"
+}
+```
+
+Example:
+
+```bash
+curl -X POST http://localhost:9000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "farmer@example.com",
+    "password": "password123"
+  }' | jq .
+```
+
+Response (200 OK):
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user_123",
+    "email": "farmer@example.com",
+    "name": "John Kamau",
+    "created_at": "2026-02-25T10:00:00Z"
+  },
+  "farm": {
+    "id": "farm_456",
+    "name": "Green Valley Farm",
+    "type": "Mixed Livestock",
+    "location": "Nakuru, Rift Valley",
+    "owner_id": "user_123",
+    "created_at": "2026-02-25T10:00:00Z"
+  },
+  "reports": [
+    {
+      "farm_id": "farm_456",
+      "crop": "maize",
+      "actions_taken": ["Applied leafy compost"],
+      "yield_before": 2.5,
+      "yield_after": 3.2,
+      "date": "2026-02-15T00:00:00Z"
+    }
+  ]
+}
+```
+
+**Offline Package:**
+The login response includes everything needed for offline operation:
+- User profile
+- Farm details
+- Historical reports
+
+Store this in IndexedDB for offline access.
+
+---
+
+
+---
+
+## Offline-First Usage Pattern
+
+**Initial Setup (Online):**
+1. User registers or logs in
+2. Frontend receives complete offline package
+3. Store in IndexedDB:
+   - JWT token
+   - User profile
+   - Farm details
+   - Historical reports
+
+**Working Offline:**
+1. Use cached user/farm data from IndexedDB
+2. Create reports locally (queue for sync)
+3. Update farm profile locally (queue for sync)
+4. All diagnosis/knowledge queries work offline
+
+**Reconnecting (Online):**
+1. Send queued reports to backend
+2. Send farm profile updates to backend
+3. Refresh token if expired
+4. Download any new reports from backend
+
+**Authentication Headers:**
+All authenticated endpoints require:
+```
+Authorization: Bearer <jwt_token>
+```
+
+Token expires after 24 hours. Refresh by logging in again.
+
+---
+
 # 1. Diagnosis Service
 
 Purpose:
@@ -411,8 +585,104 @@ Returns:
 Version information for all tracked modules.
 
 ---
+---
+
+# 8. Farm Management Service
+
+Purpose:
+Manage farm profile information (requires authentication).
+
+---
+
+## 8.1 Get Farm Profile
+
+```
+GET /farm/profile
+```
+
+Requires: `Authorization: Bearer <token>` header
+
+Example:
+
+```bash
+curl http://localhost:9000/farm/profile \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." | jq .
+```
+
+Response:
+
+```json
+{
+  "id": "farm_456",
+  "name": "Green Valley Farm",
+  "type": "Mixed Livestock",
+  "location": "Nakuru, Rift Valley",
+  "owner_id": "user_123",
+  "created_at": "2026-02-25T10:00:00Z"
+}
+```
+
+---
+
+## 8.2 Update Farm Profile
+
+```
+PUT /farm/update
+```
+
+Requires: `Authorization: Bearer <token>` header
+
+Request body:
+
+```json
+{
+  "id": "farm_456",
+  "name": "Green Valley Farm - Updated",
+  "type": "Dairy / Cattle",
+  "location": "Nakuru County"
+}
+```
+
+Example:
+
+```bash
+curl -X PUT http://localhost:9000/farm/update \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "farm_456",
+    "name": "Green Valley Farm - Updated",
+    "type": "Dairy / Cattle",
+    "location": "Nakuru County"
+  }' | jq .
+```
+
+Response:
+
+```json
+{
+  "id": "farm_456",
+  "name": "Green Valley Farm - Updated",
+  "type": "Dairy / Cattle",
+  "location": "Nakuru County",
+  "owner_id": "user_123",
+  "created_at": "2026-02-25T10:00:00Z"
+}
+```
 
 # Summary for Frontend
+
+Authentication:
+
+* POST /auth/register
+* POST /auth/login
+* Returns JWT + offline package (user, farm, reports)
+
+Farm Management:
+
+* GET /farm/profile (requires auth)
+* PUT /farm/update (requires auth)
+* Manage farm details
 
 Diagnosis:
 
@@ -462,3 +732,4 @@ Advisory combines both for production usage.
 This API is deterministic and rule-based. It does not require multiple chained requests unless the frontend chooses to separate concerns.
 
 ---
+

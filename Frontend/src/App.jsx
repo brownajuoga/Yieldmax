@@ -4,13 +4,17 @@ import Dashboard from "./components/Dashboard";
 import MyFarm from "./components/MyFarm";
 import CropAdvisory from "./components/CropAdvisory";
 import "./index.css";
-// Importing the specialized local-first API handlers 
-import { getKnowledgeByCrop, syncPendingChanges } from './services/api';
+import { getKnowledgeByCrop, syncPendingChanges, isLoggedIn, getCurrentUser } from './services/api';
 
 export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [user, setUser] = useState(() => {
+    // Check persistent login first
+    if (isLoggedIn()) {
+      return getCurrentUser();
+    }
+    // Fallback to sessionStorage for backward compatibility
     const s = sessionStorage.getItem("activeUser");
     return s ? JSON.parse(s) : null;
   });
@@ -62,6 +66,10 @@ const seedOfflineData = async () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem("activeUser");
+    // Clear persistent login state
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('current_user');
+    localStorage.removeItem('user_logged_in');
     setUser(null);
     setPage("dashboard");
   };

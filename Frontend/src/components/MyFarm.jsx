@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { submitReport, getReports } from "../services/api";
+import { getFarmsList, createFarm } from "../services/api";
 
 const CROP_OPTIONS = [
   "Maize",
@@ -48,7 +48,7 @@ export default function MyFarm({ onBack }) {
   const loadFarms = async () => {
     setLoading(true);
     try {
-      const data = await getReports();
+      const data = await getFarmsList();
       setSavedFarms(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to load farms:", err);
@@ -78,10 +78,14 @@ export default function MyFarm({ onBack }) {
     setSuccess("");
 
     try {
-      await submitReport({
-        ...formData,
-        farm_size: parseFloat(formData.farm_size) || 0,
-        timestamp: new Date().toISOString(),
+      await createFarm({
+        name: formData.farm_name,
+        type: formData.crops.join(", "),
+        location: `${formData.location}${formData.county ? `, ${formData.county}` : ""}`,
+        size: parseFloat(formData.farm_size) || 0,
+        size_unit: formData.size_unit,
+        soil_type: formData.soil_type,
+        crops: formData.crops,
       });
       setSuccess("Farm information saved successfully!");
       setFormData({
@@ -230,18 +234,14 @@ export default function MyFarm({ onBack }) {
                 className="stat-card"
               >
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                  <strong style={{ color: "var(--soil)", fontSize: "1.1rem" }}>{farm.farm_name}</strong>
+                  <strong style={{ color: "var(--soil)", fontSize: "1.1rem" }}>{farm.name}</strong>
                   <span style={{ fontSize: "0.75rem", color: "var(--bark)", background: "var(--mist)", padding: "0.2rem 0.6rem", borderRadius: "100px" }}>
-                    {new Date(farm.timestamp || Date.now()).toLocaleDateString()}
+                    {new Date(farm.created_at || Date.now()).toLocaleDateString()}
                   </span>
                 </div>
                 <div style={{ fontSize: "0.85rem", color: "var(--bark)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-                  <p><strong>Location:</strong> {farm.location}{farm.county ? `, ${farm.county}` : ""}</p>
-                  {farm.farm_size && <p><strong>Size:</strong> {farm.farm_size} {farm.size_unit}</p>}
-                  {farm.soil_type && <p><strong>Soil:</strong> {farm.soil_type}</p>}
-                  {farm.crops && farm.crops.length > 0 && (
-                    <p><strong>Crops:</strong> {farm.crops.join(", ")}</p>
-                  )}
+                  <p><strong>Location:</strong> {farm.location}</p>
+                  <p><strong>Type:</strong> {farm.type}</p>
                 </div>
               </div>
             ))}

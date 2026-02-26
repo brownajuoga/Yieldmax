@@ -10,6 +10,7 @@ type Repository interface {
 	SaveReport(r FarmReport) error
 	GetReportsByFarm(farmID string) ([]FarmReport, error)
 	GetReportsByCrop(crop string) ([]FarmReport, error)
+	ListReportsByFarm(farmID string) ([]interface{}, error)
 }
 
 type InMemoryRepository struct {
@@ -46,6 +47,19 @@ func (r *InMemoryRepository) GetReportsByFarm(farmID string) ([]FarmReport, erro
 	defer r.mu.RUnlock()
 
 	var results []FarmReport
+	for _, report := range r.reports {
+		if report.FarmID == farmID {
+			results = append(results, report)
+		}
+	}
+	return results, nil
+}
+
+func (r *InMemoryRepository) ListReportsByFarm(farmID string) ([]interface{}, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var results []interface{}
 	for _, report := range r.reports {
 		if report.FarmID == farmID {
 			results = append(results, report)
