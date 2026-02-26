@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AuthModal from "./components/AuthModal";
 import Dashboard from "./components/Dashboard";
 import MyFarm from "./components/MyFarm";
 import CropAdvisory from "./components/CropAdvisory";
 import "./index.css";
+// Importing the specialized local-first API handlers 
+import { getKnowledgeByCrop, syncPendingChanges } from './services/api';
 
 export default function App() {
   const [showAuth, setShowAuth] = useState(false);
@@ -13,6 +15,44 @@ export default function App() {
     return s ? JSON.parse(s) : null;
   });
   const [page, setPage] = useState("dashboard");
+
+  // --- LOCAL-FIRST LOGIC START --- 
+  useEffect(() => {
+    /**
+     * Pre-caches essential data immediately so the app works 
+     * even if the user never clicks these crops while online. 
+     */
+const seedOfflineData = async () => {
+  const essentialCrops = ['maize', 'pepper', 'tomatoes', 'beans', 'cabbage'];
+  essentialCrops.forEach(async (crop) => {
+    try {
+      await getKnowledgeByCrop(crop);
+      // If we reach here, it's either from Network OR Cache
+    } catch (err) {
+      console.log(`Still no data for ${crop} even in cache.`);
+    }
+  });
+};
+
+    /**
+     * Automatically syncs changes made while offline (like farm reports)
+     * as soon as the connection is restored. 
+     */
+    const handleConnectivityChange = () => {
+      if (navigator.onLine) {
+        console.log("🌐 Back online! Attempting to sync pending changes...");
+        syncPendingChanges();
+      }
+    };
+
+    // Initial seed and sync check
+    seedOfflineData();
+    if (navigator.onLine) syncPendingChanges();
+
+    window.addEventListener('online', handleConnectivityChange);
+    return () => window.removeEventListener('online', handleConnectivityChange);
+  }, []);
+  // --- LOCAL-FIRST LOGIC END ---
 
   const handleLogin = (u) => {
     sessionStorage.setItem("activeUser", JSON.stringify(u));

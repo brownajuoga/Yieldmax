@@ -1,96 +1,72 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+import { 
+  cacheData, 
+  getCachedData, 
+  queueSync, 
+  getPendingSyncs, 
+  removeFromSyncQueue 
+} from '../db/cache';
 
-/**
- * Generic fetch wrapper with error handling
- */
+const API_BASE_URL = `http://${window.location.hostname}:9000`;
+
 async function fetchApi(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-
-  const config = {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  };
-
-  try {
-    const response = await fetch(url, config);
-
-    if (response.status === 204) {
-      return null; // No content
+  
+  if (!options.method || options.method === 'GET') {
+    try {
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      
+      console.log(`%c 📥 SAVED TO DISK: ${endpoint}`, "color: green; font-weight: bold");
+      // Use 'endpoint' as the URL key to match cache.js
+      await cacheData('crops', endpoint, data);
+      return data;
+    } catch (error) {
+      const cachedData = await getCachedData('crops', endpoint);
+      if (cachedData) {
+        console.log(`%c 📦 OFFLINE RENDER: ${endpoint}`, "color: orange; font-weight: bold");
+        return cachedData;
+      }
+      throw error;
     }
+  }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `HTTP ${response.status}`);
+  if (options.method === 'POST') {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...options.headers }
+      });
+      if (!response.ok) throw new Error('Post failed');
+      return await response.json();
+    } catch (error) {
+      const payload = JSON.parse(options.body);
+      await queueSync(endpoint, 'POST', payload);
+      return { _queued: true };
     }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`API Error (${endpoint}):`, error);
-    if (error.message.includes('Failed to fetch')) {
-      throw new Error('Cannot connect to backend server. Please ensure the backend is running on port 9000.');
-    }
-    throw error;
   }
 }
 
-// ==================== KNOWLEDGE API ====================
+// Knowledge Base Exports
+export const getKnowledgeByCrop = (name) => fetchApi(`/knowledge/crop?name=${name.toLowerCase()}`);
 
-/**
- * Get farming guidance for a specific crop
- * @param {string} cropName - Name of the crop
- * @returns {Promise<Array>} Array of guidance items
- */
-export async function getKnowledgeByCrop(cropName) {
-  return fetchApi(`/knowledge/crop?name=${encodeURIComponent(cropName)}`);
-}
+// Diagnosis/Advisory Exports
+export const getAdvisory = (payload) => fetchApi('/diagnosis', { method: 'POST', body: JSON.stringify(payload) });
 
-/**
- * Get farming guidance for a specific nutrient
- * @param {string} nutrientName - Name of the nutrient (N, P, K, etc.)
- * @returns {Promise<Array>} Array of guidance items
- */
-export async function getKnowledgeByNutrient(nutrientName) {
-  return fetchApi(`/knowledge/nutrient?name=${encodeURIComponent(nutrientName)}`);
-}
+// --- THE MISSING EXPORTS FOR MYFARM.JSX ---
+export const submitReport = (data) => fetchApi('/reports', { method: 'POST', body: JSON.stringify(data) });
+export const getReports = () => fetchApi('/reports'); 
 
-// ==================== DIAGNOSIS/ADVISORY API ====================
-
-/**
- * Get combined diagnosis and guidance advisory
- * @param {Object} symptoms - Symptom data { crop, symptoms: [], soil_conditions: {} }
- * @returns {Promise<Object>} Advisory with diagnosis and guidance
- */
-export async function getAdvisory(symptoms) {
-  return fetchApi('/advisory', {
-    method: 'POST',
-    body: JSON.stringify(symptoms),
-  });
-}
-
-// ==================== REPORTS API (Farm Registration) ====================
-
-/**
- * Submit a farm registration
- * @param {Object} farmData - Farm data
- * @returns {Promise<void>}
- */
-export async function submitReport(farmData) {
-  return fetchApi('/reports', {
-    method: 'POST',
-    body: JSON.stringify(farmData),
-  });
-}
-
-/**
- * Get all registered farms
- * @returns {Promise<Array>} Array of farm registrations
- */
-export async function getReports() {
-  return fetchApi('/reports', {
-    method: 'GET',
-  });
+export async function syncPendingChanges() {
+  const queue = await getPendingSyncs();
+  for (const item of queue) {
+    try {
+      const res = await fetch(`${API_BASE_URL}${item.endpoint}`, {
+        method: item.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.payload),
+      });
+      if (res.ok) await removeFromSyncQueue(item.id);
+    } catch (e) { console.error("Sync failed", e); }
+  }
 }

@@ -22,5 +22,5 @@ func main() {
 	router := NewRouter()
 
 	log.Println("Server running on :9000")
-	log.Fatal(http.ListenAndServe(":9000", corsMiddleware(router)))
+	log.Fatal(http.ListenAndServe("0.0.0.0:9000", corsMiddleware(router)))
 }
