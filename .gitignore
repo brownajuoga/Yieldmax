@@ -1,3 +1,4 @@
 src/backend/compositor\nsrc/backend/*.exe
 **.db
 **/PROGRESS.md
+**/compositor

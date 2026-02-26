@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { register, login } from "../services/api";
 
 const getUsers = () => JSON.parse(localStorage.getItem("farmUsers") || "[]");
 const saveUser = (u) => {
@@ -17,36 +18,60 @@ export default function AuthModal({ onClose, onLogin, initialTab = "login" }) {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!form.name || !form.email || !form.password || !form.farm) {
       setError("Please fill in all required fields.");
       return;
     }
-    const users = getUsers();
-    if (users.find((u) => u.email === form.email)) {
-      setError("An account with this email already exists.");
-      return;
+    
+    try {
+      const userData = {
+        email: form.email,
+        password: form.password,
+        name: form.name,
+        farm: {
+          name: form.farm,
+          type: form.farmType,
+          location: form.location
+        }
+      };
+      
+      const response = await register(userData);
+      setError("");
+      setSuccess(true);
+      setTimeout(() => { onLogin(response.user); }, 1800);
+    } catch (err) {
+      const users = getUsers();
+      if (users.find((u) => u.email === form.email)) {
+        setError("An account with this email already exists.");
+      } else {
+        setError("Registration failed. Working offline.");
+        setSuccess(true);
+        setTimeout(() => { onLogin(form); }, 1800);
+      }
     }
-    saveUser(form);
-    setError("");
-    setSuccess(true);
-    setTimeout(() => { onLogin(form); }, 1800);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!form.email || !form.password) {
       setError("Please enter your email and password.");
       return;
     }
-    const users = getUsers();
-    const user = users.find(
-      (u) => u.email === form.email && u.password === form.password
-    );
-    if (!user) {
-      setError("Incorrect email or password.");
-      return;
+    
+    try {
+      const response = await login(form.email, form.password);
+      onLogin(response.user);
+    } catch (err) {
+      const users = getUsers();
+      const user = users.find(
+        (u) => u.email === form.email && u.password === form.password
+      );
+      if (!user) {
+        setError("Incorrect email or password.");
+        return;
+      }
+      onLogin(user);
     }
-    onLogin(user);
   };
 
   return (
