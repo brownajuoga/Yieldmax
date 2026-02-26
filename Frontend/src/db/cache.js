@@ -1,4 +1,3 @@
-// IndexedDB cache management
 const DB_NAME = 'yieldmax-cache';
 const DB_VERSION = 1;
 let db;
@@ -15,15 +14,15 @@ export async function initDB() {
 
     request.onupgradeneeded = (event) => {
       db = event.target.result;
-      // The keyPath is 'url'
       if (!db.objectStoreNames.contains('crops')) {
         db.createObjectStore('crops', { keyPath: 'url' });
       }
+      // NEW: Store for Marketplace listings
+      if (!db.objectStoreNames.contains('market')) {
+        db.createObjectStore('market', { keyPath: 'url' });
+      }
       if (!db.objectStoreNames.contains('farms')) {
         db.createObjectStore('farms', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!db.objectStoreNames.contains('advisories')) {
-        db.createObjectStore('advisories', { keyPath: 'id', autoIncrement: true });
       }
       if (!db.objectStoreNames.contains('syncQueue')) {
         db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
@@ -36,43 +35,28 @@ export const cacheData = (storeName, url, data) => {
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([storeName], 'readwrite');
     const store = transaction.objectStore(storeName);
-  
-    // FIX: Field name MUST be 'url' to match the keyPath in initDB
-    const record = {
-      url: url, 
-      data: data,
-      timestamp: Date.now()
-    };
-
+    const record = { url, data, timestamp: Date.now() };
     const request = store.put(record); 
     request.onsuccess = () => resolve();
-    request.onerror = (e) => {
-      console.error("IndexedDB Put Error:", e.target.error);
-      reject(e.target.error);
-    };
+    request.onerror = (e) => reject(e.target.error);
   });
 };
 
 export async function getCachedData(storeName, url) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!db) { resolve(null); return; }
     const tx = db.transaction(storeName, 'readonly');
     const request = tx.objectStore(storeName).get(url);
-
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      // Return just the 'data' part to keep the UI logic simple
-      resolve(request.result ? request.result.data : null);
-    };
+    request.onsuccess = () => resolve(request.result ? request.result.data : null);
+    request.onerror = () => resolve(null);
   });
 }
 
-// ... rest of your sync functions (queueSync, getPendingSyncs, etc) remain the same
 export async function queueSync(endpoint, method, payload) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('syncQueue', 'readwrite');
     const request = tx.objectStore('syncQueue').add({
-      endpoint, method, payload, timestamp: Date.now(), status: 'pending', retries: 0,
+      endpoint, method, payload, timestamp: Date.now()
     });
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);

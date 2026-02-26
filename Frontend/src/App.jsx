@@ -3,60 +3,53 @@ import AuthModal from "./components/AuthModal";
 import Dashboard from "./components/Dashboard";
 import MyFarm from "./components/MyFarm";
 import CropAdvisory from "./components/CropAdvisory";
+import Marketplace from "./components/Marketplace"; // New Import
 import "./index.css";
-import { getKnowledgeByCrop, syncPendingChanges, isLoggedIn, getCurrentUser } from './services/api';
+import { 
+  getKnowledgeByCrop, 
+  syncPendingChanges, 
+  isLoggedIn, 
+  getCurrentUser,
+  getMarketListings 
+} from './services/api';
 
 export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [user, setUser] = useState(() => {
-    // Check persistent login first
-    if (isLoggedIn()) {
-      return getCurrentUser();
-    }
-    // Fallback to sessionStorage for backward compatibility
+    if (isLoggedIn()) return getCurrentUser();
     const s = sessionStorage.getItem("activeUser");
     return s ? JSON.parse(s) : null;
   });
   const [page, setPage] = useState("dashboard");
 
-  // --- LOCAL-FIRST LOGIC START --- 
+  // --- LOCAL-FIRST & SEEDING LOGIC --- 
   useEffect(() => {
-    /**
-     * Pre-caches essential data immediately so the app works 
-     * even if the user never clicks these crops while online. 
-     */
-const seedOfflineData = async () => {
-  const essentialCrops = ['maize', 'pepper', 'tomatoes', 'beans', 'cabbage'];
-  essentialCrops.forEach(async (crop) => {
-    try {
-      await getKnowledgeByCrop(crop);
-      // If we reach here, it's either from Network OR Cache
-    } catch (err) {
-      console.log(`Still no data for ${crop} even in cache.`);
-    }
-  });
-};
+    const seedOfflineData = async () => {
+      console.log("⚡ Seeding local database...");
+      const essentialCrops = ['maize', 'pepper', 'tomatoes', 'beans', 'cabbage'];
+      
+      // Seed Crops & Marketplace
+      essentialCrops.forEach(async (crop) => {
+        try { await getKnowledgeByCrop(crop); } catch (err) {}
+      });
+      
+      try { await getMarketListings(); } catch (err) {}
+    };
 
-    /**
-     * Automatically syncs changes made while offline (like farm reports)
-     * as soon as the connection is restored. 
-     */
     const handleConnectivityChange = () => {
       if (navigator.onLine) {
-        console.log("🌐 Back online! Attempting to sync pending changes...");
+        console.log("🌐 Back online! Syncing changes...");
         syncPendingChanges();
       }
     };
 
-    // Initial seed and sync check
     seedOfflineData();
     if (navigator.onLine) syncPendingChanges();
 
     window.addEventListener('online', handleConnectivityChange);
     return () => window.removeEventListener('online', handleConnectivityChange);
   }, []);
-  // --- LOCAL-FIRST LOGIC END ---
 
   const handleLogin = (u) => {
     sessionStorage.setItem("activeUser", JSON.stringify(u));
@@ -66,7 +59,6 @@ const seedOfflineData = async () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem("activeUser");
-    // Clear persistent login state
     localStorage.removeItem('auth_token');
     localStorage.removeItem('current_user');
     localStorage.removeItem('user_logged_in');
@@ -80,6 +72,8 @@ const seedOfflineData = async () => {
         return <MyFarm onBack={() => setPage("dashboard")} />;
       case "advisory":
         return <CropAdvisory onBack={() => setPage("dashboard")} />;
+      case "market":
+        return <Marketplace onBack={() => setPage("dashboard")} />; // New Case
       default:
         return <Dashboard user={user} onNavigate={setPage} />;
     }
@@ -103,11 +97,11 @@ const seedOfflineData = async () => {
               Turning Wastes <span style={{ display: "block" }}>Into</span> <span style={{ display: "block", color: "inherit" }}>Nutrients</span>
             </h1>
             <p className="hero-sub">
-              Get personalized guidance on crop care, manure selection, and application timing for healthier soils and better yields. 
+              Get personalized guidance on crop care, manure selection, and exchange organic waste with other farmers. 
             </p>
           </div>
 
-          <div className="footer-bar">© 2025 YieldMax · Agricultural Advisory Platform</div>
+          <div className="footer-bar">© 2026 YieldMax · Agricultural Advisory Platform</div>
 
           {showAuth && <AuthModal initialTab={authMode} onClose={() => setShowAuth(false)} onLogin={handleLogin} />}
         </div>
@@ -117,6 +111,7 @@ const seedOfflineData = async () => {
             <div className="app-logo"><span>🌿</span> YieldMax</div>
             <div className="app-nav-links">
               <button className={`nav-btn ${page === "dashboard" ? "active" : ""}`} onClick={() => setPage("dashboard")}>Home</button>
+              <button className={`nav-btn ${page === "market" ? "active" : ""}`} onClick={() => setPage("market")}>Exchange</button>
               <button className="nav-btn logout" onClick={handleLogout}>Sign Out</button>
             </div>
           </nav>
