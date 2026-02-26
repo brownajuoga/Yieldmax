@@ -65,6 +65,7 @@ export default function CropAdvisory({ onBack }) {
 
     try {
       // First get crop-specific knowledge (use lowercase for backend matching)
+      const cropName = formData.crop.toLowerCase().trim();
       const knowledgeData = await getKnowledgeByCrop(formData.crop.toLowerCase());
 
       // Then get diagnosis if symptoms provided

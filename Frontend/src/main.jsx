@@ -1,40 +1,38 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
-import { initDB, syncPendingChanges } from './services/api'
+import { initDB } from './db/cache' 
+import { syncPendingChanges } from './services/api'
 
-// Initialize IndexedDB
+// 1. Wait for DB to be initialized BEFORE rendering
 initDB().then(() => {
-  console.log('Database ready');
+  console.log('✅ Database ready');
   
-  // Try to sync if online
+  // 2. Render the app ONLY after DB is ready
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+
+  // 3. Trigger sync if online
   if (navigator.onLine) {
-    syncPendingChanges();
+    syncPendingChanges().then(res => {
+        if(res?.synced > 0) console.log(`🔄 Synced ${res.synced} items`);
+    });
   }
+}).catch(err => {
+  console.error(" Failed to initialize database:", err);
+  // Optional: Render a "Critical Error" UI here
 });
 
-// Register service worker
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js').then(() => {
-    console.log('Service Worker registered');
-  }).catch(err => {
-    console.warn('⚠ Service Worker registration failed:', err);
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('🚀 SW registered'))
+      .catch(err => console.warn('⚠ SW failed:', err));
   });
 }
 
-// Listen for online/offline events
-window.addEventListener('online', async () => {
-  console.log('🟢 Back online - syncing changes...');
-  const { syncPendingChanges } = await import('./services/api');
-  syncPendingChanges();
-});
-
-window.addEventListener('offline', () => {
-  console.log('🔴 Offline - queuing changes');
-});
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+window.addEventListener('online', () => syncPendingChanges());

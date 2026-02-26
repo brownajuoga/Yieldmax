@@ -42,20 +42,27 @@ export async function initDB() {
   });
 }
 
-// Cache GET request responses
-export async function cacheData(storeName, url, data) {
+// Inside cache.js
+export const cacheData = (storeName, endpoint, data) => {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const request = tx.objectStore(storeName).put({
-      url,
-      data,
-      timestamp: Date.now(),
-    });
+    const transaction = db.transaction([storeName], 'readwrite');
+    const store = transaction.objectStore(storeName);
+  
+    const record = {
+      endpoint: endpoint, 
+      data: data,
+      timestamp: Date.now()
+    };
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
+    const request = store.put(record); 
+
+    request.onsuccess = () => resolve();
+    request.onerror = (e) => {
+      console.error("IndexedDB Put Error:", e.target.error);
+      reject(e.target.error);
+    };
   });
-}
+};
 
 // Retrieve cached data
 export async function getCachedData(storeName, url) {
