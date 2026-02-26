@@ -51,6 +51,28 @@ async function fetchApi(endpoint, options = {}) {
   }
 }
 
+async function fetchData(url) {
+    // Check if the data is in the cache
+    const cachedResponse = await caches.match(url);
+    if (cachedResponse) {
+        return cachedResponse.json();
+    }
+
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const cache = await caches.open('my-cache');
+            cache.put(url, response.clone());
+            return response.json();
+        } else {
+            throw new Error('Network response was not ok.');
+        }
+    } catch (error) {
+        console.error('Fetch failed; returning offline data instead.', error);
+        return { error: 'Unable to fetch data.' };
+    }
+}
+
 // ==================== KNOWLEDGE API ====================
 
 /**
