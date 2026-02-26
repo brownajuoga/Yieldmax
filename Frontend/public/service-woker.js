@@ -1,51 +1,87 @@
-const CACHE_NAME = 'yieldmax-cache-v1';
-const API_CACHE = 'yieldmax-api-v1';
+const CACHE_VERSION = 'yieldmax-v1';
+const CACHE_URLS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+];
 
+// Install event
 self.addEventListener('install', (event) => {
-  event.waitUntil(self.skipWaiting());
+  console.log('🔧 Service Worker installing...');
+  event.waitUntil(
+    caches.open(CACHE_VERSION).then((cache) => {
+      console.log('✅ Cached app shell');
+      return cache.addAll(CACHE_URLS);
+    }).catch(err => {
+      console.warn('⚠ Could not cache all resources:', err);
+    })
+  );
+  self.skipWaiting();
 });
 
+// Activate event
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  console.log('✅ Service Worker activated');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_VERSION)
+          .map(name => {
+            console.log('🗑️ Deleting old cache:', name);
+            return caches.delete(name);
+          })
+      );
+    })
+  );
+  self.clients.claim();
 });
 
+// Fetch event
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Cache API responses
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/knowledge')) {
-    if (request.method === 'GET') {
-      event.respondWith(
-        caches.open(API_CACHE).then((cache) => {
-          return cache.match(request).then((response) => {
-            return (
-              response ||
-              fetch(request)
-                .then((resp) => {
-                  if (resp.ok) cache.put(request, resp.clone());
-                  return resp;
-                })
-                .catch(() => {
-                  return cache.match(request) || new Response('Offline - No cached data', { status: 503 });
-                })
-            );
-          });
-        })
-      );
-    }
+  // Skip non-GET requests and API calls (let IndexedDB handle them)
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Serve static assets from cache
+  if (url.pathname.startsWith('/assets/') || 
+      url.pathname === '/index.html' ||
+      url.pathname === '/') {
+    event.respondWith(
+      caches.match(request).then((response) => {
+        return (
+          response ||
+          fetch(request)
+            .then((resp) => {
+              if (resp.ok) {
+                const cache = caches.open(CACHE_VERSION);
+                cache.then(c => c.put(request, resp.clone()));
+              }
+              return resp;
+            })
+            .catch(() => {
+              // Return offline page if needed
+              return new Response('Offline - no cached content', { status: 503 });
+            })
+        );
+      })
+    );
   }
 });
 
-// Background sync
+// Background sync for queued mutations
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-mutations') {
-    event.waitUntil(syncPendingMutations());
+    event.waitUntil(
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({ type: 'SYNC_MUTATIONS' });
+        });
+      })
+    );
   }
 });
-
-async function syncPendingMutations() {
-  // This will be called when connection is restored
-  // Pull from IndexedDB sync queue and send to backend
-  console.log('Background sync triggered');
-}
