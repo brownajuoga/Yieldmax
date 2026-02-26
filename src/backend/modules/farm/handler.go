@@ -76,6 +76,73 @@ func RegisterRoutes(mux *http.ServeMux, service Service, authService AuthService
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(updated)
 	})
+
+	// @Summary Get all farms for user
+	// @Tags Farm
+	// @Produce json
+	// @Security BearerAuth
+	// @Success 200 {array} Farm
+	// @Router /farm/list [get]
+	mux.HandleFunc("/farm/list", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		user, err := extractUserFromToken(r, authService)
+		if err != nil || user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userID, _ := user.(map[string]interface{})["id"].(string)
+		farms, err := service.GetFarmsByOwnerID(userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(farms)
+	})
+
+	// @Summary Create new farm
+	// @Tags Farm
+	// @Accept json
+	// @Produce json
+	// @Security BearerAuth
+	// @Param farm body Farm true "Farm data"
+	// @Success 201 {object} Farm
+	// @Router /farm/create [post]
+	mux.HandleFunc("/farm/create", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		user, err := extractUserFromToken(r, authService)
+		if err != nil || user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		var farm Farm
+		if err := json.NewDecoder(r.Body).Decode(&farm); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		userID, _ := user.(map[string]interface{})["id"].(string)
+		newFarm, err := service.CreateFarm(farm.Name, farm.Type, farm.Location, userID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(newFarm)
+	})
 }
 
 func extractUserFromToken(r *http.Request, authService AuthService) (interface{}, error) {

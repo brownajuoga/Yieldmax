@@ -228,3 +228,9 @@ export async function syncPendingChanges() {
     } catch (e) { console.error("Sync failed", e); }
   }
 }
+// Farm Management
+export const getFarmsList = () => fetchApi('/farm/list');
+export const createFarm = (farmData) => fetchApi('/farm/create', { 
+  method: 'POST', 
+  body: JSON.stringify(farmData) 
+});

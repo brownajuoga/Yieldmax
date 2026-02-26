@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	CreateFarm(name, farmType, location, ownerID string) (*Farm, error)
 	GetFarmByOwnerID(ownerID string) (*Farm, error)
+	GetFarmsByOwnerID(ownerID string) ([]Farm, error)
 	UpdateFarm(id, name, farmType, location string) error
 }
 
@@ -52,6 +53,27 @@ func (r *SQLiteRepository) GetFarmByOwnerID(ownerID string) (*Farm, error) {
 	return farm, err
 }
 
+func (r *SQLiteRepository) GetFarmsByOwnerID(ownerID string) ([]Farm, error) {
+	rows, err := r.db.Query(
+		"SELECT id, name, type, location, owner_id, created_at FROM farms WHERE owner_id = ?",
+		ownerID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var farms []Farm
+	for rows.Next() {
+		var farm Farm
+		err := rows.Scan(&farm.ID, &farm.Name, &farm.Type, &farm.Location, &farm.OwnerID, &farm.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		farms = append(farms, farm)
+	}
+	return farms, nil
+}
 func (r *SQLiteRepository) UpdateFarm(id, name, farmType, location string) error {
 	_, err := r.db.Exec(
 		"UPDATE farms SET name = ?, type = ?, location = ? WHERE id = ?",
