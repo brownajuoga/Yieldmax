@@ -49,14 +49,15 @@ export default function App() {
             </div>
           </nav>
 
-          <div className="hero">
+          <div className="hero" style={{ marginBottom: 0, paddingBottom: 0 }}>
             <div className="badge">🇰🇪 Smart Farming Assistant</div>
             <h1 className="hero-title">
               Turning Wastes <span style={{ display: "block" }}>Into</span> <span style={{ display: "block", color: "inherit" }}>Nutrients</span>
             </h1>
-            <p className="hero-sub">
+            <p className="hero-sub" style={{ marginBottom: "1rem" }}>
               Get personalized guidance on crop care, manure selection, and application timing for healthier soils and better yields.
             </p>
+            <img src="/ivPhoto.png" alt="Farming" style={{ width: "calc(100% + 4rem)", maxWidth: "none", maxHeight: "250px", objectFit: "cover", display: "block", margin: "0 -2rem" }} />
           </div>
 
           <div className="footer-bar">© 2025 YieldMax · Agricultural Advisory Platform</div>
