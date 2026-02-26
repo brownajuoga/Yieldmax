@@ -1,4 +1,4 @@
-import { openDB } from 'idb';
+// IndexedDB cache management without external dependencies
 
 const DB_NAME = 'yieldmax-cache';
 const DB_VERSION = 1;
@@ -6,61 +6,143 @@ const DB_VERSION = 1;
 let db;
 
 export async function initDB() {
-  db = await openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      db = request.result;
+      console.log('✅ IndexedDB initialized');
+      resolve(db);
+    };
+
+    request.onupgradeneeded = (event) => {
+      db = event.target.result;
+
       // Store crops/guidance data
       if (!db.objectStoreNames.contains('crops')) {
-        db.createObjectStore('crops', { keyPath: 'name' });
+        db.createObjectStore('crops', { keyPath: 'url' });
       }
-      
+
       // Store farm registrations
       if (!db.objectStoreNames.contains('farms')) {
         db.createObjectStore('farms', { keyPath: 'id', autoIncrement: true });
       }
-      
+
       // Store advisory results
       if (!db.objectStoreNames.contains('advisories')) {
         db.createObjectStore('advisories', { keyPath: 'id', autoIncrement: true });
       }
-      
-      // Queue for pending syncs
+
+      // Queue for pending syncs (mutations)
       if (!db.objectStoreNames.contains('syncQueue')) {
         db.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
       }
-    },
+    };
   });
-  return db;
 }
 
-// Cache API response
-export async function cacheData(storeName, data) {
-  const tx = db.transaction(storeName, 'readwrite');
-  await tx.store.put(data);
-  await tx.done;
+// Cache GET request responses
+export async function cacheData(storeName, url, data) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const request = tx.objectStore(storeName).put({
+      url,
+      data,
+      timestamp: Date.now(),
+    });
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
 }
 
 // Retrieve cached data
-export async function getCachedData(storeName, key) {
-  return db.get(storeName, key);
+export async function getCachedData(storeName, url) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const request = tx.objectStore(storeName).get(url);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
 }
 
-// Queue mutation for sync
+// Get all cached data from a store
+export async function getAllCachedData(storeName) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const request = tx.objectStore(storeName).getAll();
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+// Queue a mutation (POST/PUT) for sync
 export async function queueSync(endpoint, method, payload) {
-  return db.add('syncQueue', {
-    endpoint,
-    method,
-    payload,
-    timestamp: Date.now(),
-    status: 'pending',
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('syncQueue', 'readwrite');
+    const request = tx.objectStore('syncQueue').add({
+      endpoint,
+      method,
+      payload,
+      timestamp: Date.now(),
+      status: 'pending',
+      retries: 0,
+    });
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      console.log('📝 Mutation queued for sync:', endpoint);
+      resolve(request.result);
+    };
   });
 }
 
 // Get pending syncs
 export async function getPendingSyncs() {
-  return db.getAll('syncQueue');
+  return getAllCachedData('syncQueue');
 }
 
-// Remove from queue after successful sync
+// Update sync status
+export async function updateSyncStatus(id, status) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('syncQueue', 'readwrite');
+    const request = tx.objectStore('syncQueue').get(id);
+
+    request.onsuccess = () => {
+      const data = request.result;
+      data.status = status;
+      const updateRequest = tx.objectStore('syncQueue').put(data);
+      updateRequest.onsuccess = () => resolve();
+      updateRequest.onerror = () => reject(updateRequest.error);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Remove from sync queue
 export async function removeFromSyncQueue(id) {
-  return db.delete('syncQueue', id);
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('syncQueue', 'readwrite');
+    const request = tx.objectStore('syncQueue').delete(id);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      console.log('✅ Synced mutation removed from queue');
+      resolve();
+    };
+  });
+}
+
+// Clear a store
+export async function clearStore(storeName) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const request = tx.objectStore(storeName).clear();
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
 }
