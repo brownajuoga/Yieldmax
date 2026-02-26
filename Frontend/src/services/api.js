@@ -1,9 +1,21 @@
-import { cacheData, getCachedData, queueSync } from '../db/cache';
+import { 
+  cacheData, 
+  getCachedData, 
+  queueSync, 
+  getPendingSyncs, 
+  removeFromSyncQueue,
+  updateSyncStatus 
+} from '../db/cache';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
 
+/**
+ * Enhanced fetch with offline support, caching, and sync queuing
+ */
 async function fetchApi(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const isOnline = navigator.onLine;
+
   const config = {
     ...options,
     headers: {
@@ -12,65 +24,115 @@ async function fetchApi(endpoint, options = {}) {
     },
   };
 
-  try {
-    const response = await fetch(url, config);
+  // GET requests: try network first, fallback to cache
+  if (!options.method || options.method === 'GET') {
+    try {
+      const response = await fetch(url, config);
 
-    if (response.status === 204) return null;
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `HTTP ${response.status}`);
-    }
+      if (response.status === 204) return null;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-    const data = await response.json();
-    
-    // Cache successful responses
-    if (options.method === 'GET' || !options.method) {
-      await cacheData('crops', { name: endpoint, data, timestamp: Date.now() });
-    }
-    
-    return data;
-  } catch (error) {
-    console.error(`API Error (${endpoint}):`, error);
-    
-    // Try cache fallback for GET requests
-    if (!options.method || options.method === 'GET') {
+      const data = await response.json();
+      
+      // Cache successful response
+      await cacheData('crops', endpoint, data);
+      console.log('✅ Cached:', endpoint);
+      
+      return data;
+    } catch (error) {
+      console.warn(`Network error on GET ${endpoint}, trying cache...`);
+      
+      // Fallback to cache
       const cached = await getCachedData('crops', endpoint);
       if (cached) {
-        console.warn('Serving from cache:', endpoint);
+        console.warn('📦 Serving from cache:', endpoint);
         return cached.data;
       }
+      
+      // No cache available
+      console.error(`Failed to fetch ${endpoint} and no cache available`);
+      throw new Error(`Cannot load data. Please check your connection. (${endpoint})`);
     }
-    
-    // Queue mutations for later sync
-    if (options.method === 'POST' || options.method === 'PUT') {
-      await queueSync(endpoint, options.method, JSON.parse(options.body || '{}'));
-      return { _queued: true, message: 'Changes saved offline. Will sync when reconnected.' };
-    }
-    
-    throw error;
   }
+
+  // POST/PUT requests: queue for sync if offline
+  if (options.method === 'POST' || options.method === 'PUT') {
+    try {
+      const response = await fetch(url, config);
+
+      if (response.status === 204) return null;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Synced:', endpoint);
+      return data;
+    } catch (error) {
+      console.warn(`Network error on ${options.method} ${endpoint}, queuing...`);
+      
+      // Queue for later sync
+      const payload = options.body ? JSON.parse(options.body) : {};
+      await queueSync(endpoint, options.method, payload);
+      
+      return { 
+        _queued: true,
+        _offline: true,
+        message: '📱 Changes saved locally. Will sync when connected.' 
+      };
+    }
+  }
+
+  throw new Error('Invalid request method');
 }
 
-async function fetchData(url) {
-    // Check if the data is in the cache
-    const cachedResponse = await caches.match(url);
-    if (cachedResponse) {
-        return cachedResponse.json();
-    }
+/**
+ * Sync all queued mutations with backend
+ */
+export async function syncPendingChanges() {
+  if (!navigator.onLine) {
+    console.log('📵 Offline - cannot sync yet');
+    return { synced: 0, failed: 0 };
+  }
 
+  const queue = await getPendingSyncs();
+  if (queue.length === 0) {
+    console.log('✅ No pending changes');
+    return { synced: 0, failed: 0 };
+  }
+
+  console.log(`🔄 Syncing ${queue.length} pending changes...`);
+  let synced = 0;
+  let failed = 0;
+
+  for (const item of queue) {
     try {
-        const response = await fetch(url);
-        if (response.ok) {
-            const cache = await caches.open('my-cache');
-            cache.put(url, response.clone());
-            return response.json();
-        } else {
-            throw new Error('Network response was not ok.');
-        }
+      const response = await fetch(`${API_BASE_URL}${item.endpoint}`, {
+        method: item.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item.payload),
+      });
+
+      if (response.ok) {
+        await removeFromSyncQueue(item.id);
+        synced++;
+        console.log(`✅ Synced: ${item.endpoint}`);
+      } else {
+        await updateSyncStatus(item.id, 'failed');
+        failed++;
+        console.error(`❌ Failed: ${item.endpoint}`);
+      }
     } catch (error) {
-        console.error('Fetch failed; returning offline data instead.', error);
-        return { error: 'Unable to fetch data.' };
+      await updateSyncStatus(item.id, 'failed');
+      failed++;
+      console.error(`❌ Sync error: ${item.endpoint}`, error);
     }
+  }
+
+  console.log(`✅ Sync complete: ${synced} succeeded, ${failed} failed`);
+  return { synced, failed };
 }
 
 // ==================== KNOWLEDGE API ====================
