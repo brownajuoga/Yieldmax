@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
+
+	"compositor/modules/auth"
 )
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -19,7 +21,13 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
-	router := NewRouter()
+	db, err := auth.InitDB("yieldmax.db")
+	if err != nil {
+		log.Fatal("Failed to initialize database:", err)
+	}
+	defer db.Close()
+
+	router := NewRouter(db)
 
 	log.Println("Server running on :9000")
 	log.Fatal(http.ListenAndServe("0.0.0.0:9000", corsMiddleware(router)))
